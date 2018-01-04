@@ -1,7 +1,9 @@
 import sys
 import os
 import redis
-from pubsub import pub
+import math
+
+GRAVITY = 9.8
 
 class Component(Object):
 
@@ -9,8 +11,8 @@ class Component(Object):
         '''
             Physical component of an industrial control system 
             - name : name of the component
-            - in_value : name of the topic to subscribe to
-            - out_value : name of the topic to publish to
+            - in_value : key where to get value 
+            - out_value : key where to set value 
         '''
         self.name = name
         self.in_value = in_value
@@ -25,82 +27,92 @@ class Component(Object):
         '''
         print "This method must be overriden"
 
-    def get_from_store(self, name):
+    def get(self, name):
         '''
             Get value from actuators
         '''
         return self.store.get(name)
 
-    def set_to_store(self, name, value):
+    def set(self, name, value):
         '''
             Set value to sensors
         '''
         store.set(name, value)
 
 
-class Tank(Component):
-
-    def __init__(self, level, pump = None):
-        '''
-            - level :  level of the water in the tank
-            - pump : pump placed on the tank to transfer water
-        '''
-        super.__init__(name, in_value, out_value, store)
-        self.level = level
-        self.pump = pump
-
-    def computation(*args):
-        if pump:
-            '''
-                - Read pressure
-                - compute output rate
-                - change flow level
-                - publish
-            '''
-            output = 0.0
-            if self.level > 0 and output < self.level:
-                self.level = self.level - output
-                pub.sendMessage(out_value, arg1=output)
 
 class Pump(Component):
-    def __init__(self, name, in_value, out_value, store, pressure, running):
+    def __init__(self, name, in_value, out_value, store, flow_out, running):
         '''
-            - pressure : level of pressure outputed by the pump
+            - flow_out : flow_out outputed by the pump (m^3/s)
             - running : is the pump running or not
         '''
         super.__init__(name, in_value, out_value, store)
-        self.pressure = pressure
+        self.flow_out = flow_out
         self.running = running
 
     def computation(*args):
         '''
             - Check if running from actuators
-            - Change pressure accordingly
+            - Change flow_out accordingly
         '''
+        self.running = self.get(args)
         if not self.running:
-            self.pressure = 0
+            self.flow_out = 0
+        else :
+            self.flow_out = self.get(args)
          
+        self.set(self.out_value, self.flow_out)
 
-class Pipe(Component):
-    def __init__(self, name, in_value, out_value, store, diameter, flow_rate, length, valve=None):
+
+
+
+class Tank(Component):
+
+    def __init__(self, height, radius ,level, hole, valve = None):
         '''
-            - diameter :  size in mm
-            - flow_rate : flow rate in the pipe in m^3/s
-            - length : lenght the pipe in meter
+            - height : height of the tank (m) 
+            - radius : radius of the tank (m)
+            - level :  level of the water in the tank
+            - hole : hole size in (m)
+            - valve : valve to open outlet placed on the tank 
         '''
         super.__init__(name, in_value, out_value, store)
-        self.diameter = diameter
-        self.flow_rate = flow_rate
-        self.length = length 
+        self.height = height
+        self.radius = radius
+        self.level = level
+        self.hole = hole
         self.valve = valve
 
     def computation(*args):
-        '''
-            - check if valve open
-            - compute out from in and diameter
-            - compute flow rate 
-        '''
-        pass
+            '''
+                - compute output rate
+                - change flow level
+                - output flow rate
+            '''
+            '''
+                Bernouilli equation  : a * sqrt(2*g*h)
+                - a : size of the hole in the tank to output water (m^2)
+                - h : level of water in the tank (m)
+                - g : acceleration of gravity (9.8 m/s^2)
+                Conservation of mass : flow_in - flow_out
+            ''' 
+            if self.valve.opened:
+                flow_out = self.hole * math.sqrt(2*self.level*GRAVITY) 
+            else: 
+                flow_out = 0
+
+            flow_in = self.get(self.in_value)
+            # FIXME change right formula
+            rise = flow_out  - flow_in
+            self.level = self.level - rise
+            if self.level >= 0 :
+                self.level = min(self.level, self.height) 
+            else:
+                self.level = 0 
+
+            self.set(self.out_value, flow_out)
+            self.set(args,self.level)
 
 class Valve(Component):
     def __init__(self, name, in_value, out_value, store, opened):
@@ -115,5 +127,27 @@ class Valve(Component):
             - check actuator from store
             - change status, open or not
         '''
-        pass
+        self.opened = self.get(args)
+
+class Pipe(Component):
+    def __init__(self, name, in_value, out_value, store, diameter, flow_rate, length, valve=None):
+        '''
+            - diameter :  size in mm
+            - flow_rate : flow rate in the pipe in m^3/s
+            - length : length the pipe in meter
+        '''
+        super.__init__(name, in_value, out_value, store)
+        self.diameter = diameter
+        self.flow_rate = flow_rate
+        self.length = length 
+
+    def computation(*args):
+        '''
+            - compute out from in and diameter
+            - compute flow rate 
+        '''
+        self.flow_rate = self.get(in_value)
+        self.set(args, self.flow_rate)
+        self.set(out_value, self.flow_rate)
+
 
