@@ -34,7 +34,7 @@ if __name__ == "__main__":
     parser.add_argument("--name_valve", dest="name_valve", action="store")
     parser.add_argument("--valve_in", dest="valve_in", action="store")
     parser.add_argument("--valve_out", dest="valve_out", action="store")
-    parser.add_argument("--opened", dest="opened", action="store")
+    parser.add_argument("--opened", dest="opened",type=bool, action="store")
     parser.add_argument("--storename", dest="storename", action="store")
     parser.add_argument("--water_level", dest="water_level", action="store")
     parser.add_argument("--valve_state", dest="valve_state", action="store")

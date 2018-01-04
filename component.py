@@ -1,7 +1,9 @@
 import sys
 import os
 import redis
+import simplekv
 import math
+from utils import PeriodicTask
 
 GRAVITY = 9.8
 
@@ -18,10 +20,8 @@ class Component(Object):
         self.in_value = in_value
         self.out_value = out_value
         self.store = store
-        # Value read from the messaging queue
-        self.values = {}
 
-    def computation(*args):
+    def computation(self, *args):
         '''
             Computation done by the component 
         '''
@@ -39,6 +39,13 @@ class Component(Object):
         '''
         store.set(name, value)
 
+    def start(self,name, period, duration, *args):
+        try:
+            task = PeriodicTask(name, period, duration ,self.computation, *args) 
+            task.start()
+            task.join()
+        except:
+            print "Error: unable to start thread"
 
 
 class Pump(Component):
@@ -51,7 +58,7 @@ class Pump(Component):
         self.flow_out = flow_out
         self.running = running
 
-    def computation(*args):
+    def computation(self, *args):
         '''
             - Check if running from actuators
             - Change flow_out accordingly
@@ -69,7 +76,7 @@ class Pump(Component):
 
 class Tank(Component):
 
-    def __init__(self, height, radius ,level, hole, valve = None):
+    def __init__(self, name, in_value, out_value, height, radius ,level, hole, valve = None):
         '''
             - height : height of the tank (m) 
             - radius : radius of the tank (m)
@@ -84,7 +91,7 @@ class Tank(Component):
         self.hole = hole
         self.valve = valve
 
-    def computation(*args):
+    def computation(self, *args):
             '''
                 - compute output rate
                 - change flow level
@@ -98,7 +105,7 @@ class Tank(Component):
                 Conservation of mass : flow_in - flow_out
             ''' 
             if self.valve.opened:
-                flow_out = self.hole * math.sqrt(2*self.level*GRAVITY) 
+                flow_out = (math.pi* (self.hole**2 )* math.sqrt(2*self.level*GRAVITY))
             else: 
                 flow_out = 0
 
@@ -122,7 +129,7 @@ class Valve(Component):
         super.__init__(name, in_value, out_value, store)
         self.opened = opened
 
-    def computation(*args):
+    def computation(self, *args):
         '''
             - check actuator from store
             - change status, open or not
@@ -130,9 +137,9 @@ class Valve(Component):
         self.opened = self.get(args)
 
 class Pipe(Component):
-    def __init__(self, name, in_value, out_value, store, diameter, flow_rate, length, valve=None):
+    def __init__(self, name, in_value, out_value, store, flow_rate, length=None, diameter=None):
         '''
-            - diameter :  size in mm
+            - diameter :  size in m
             - flow_rate : flow rate in the pipe in m^3/s
             - length : length the pipe in meter
         '''
@@ -141,7 +148,7 @@ class Pipe(Component):
         self.flow_rate = flow_rate
         self.length = length 
 
-    def computation(*args):
+    def computation(self, *args):
         '''
             - compute out from in and diameter
             - compute flow rate 
