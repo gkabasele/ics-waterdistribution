@@ -13,13 +13,14 @@ def main(args):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--name", dest="name", action="store")
-    parser.add_argument("--in_value", dest="in_value", action="store")
+    parser.add_argument("--name", dest="name",default="pump", action="store")
+    parser.add_argument("--in_value", dest="in_value", default= None, action="store")
     parser.add_argument("--out_value", dest="out_value", action="store")
-    parser.add_argument("--running", dest="running", type=bool, action="store")
-    parser.add_argument("--flow_out", dest="flow_out", type=float, action="store")
-    parser.add_argument("--period", dest="period",type=int ,action="store")
-    parser.add_argument("--duration", dest="duration", type=int, action="store") 
+    parser.add_argument("--storename", dest="storename", action="store")
+    parser.add_argument("--running", dest="running", default=True, type=bool, action="store")
+    parser.add_argument("--flow_out", dest="flow_out", type=float, default= 5, action="store")
+    parser.add_argument("--period", dest="period",type=int, default=1 ,action="store")
+    parser.add_argument("--duration", dest="duration", type=int, default=600, action="store") 
 
     args = parser.parse_args()
     

@@ -1,13 +1,12 @@
 import sys
 import os
 import redis
-import simplekv
 import math
 from utils import PeriodicTask
-
+from simplekv.fs import FilesystemStore
 GRAVITY = 9.8
 
-class Component(Object):
+class Component():
 
     def __init__(self, name, in_value, out_value, store):
         '''
@@ -19,7 +18,7 @@ class Component(Object):
         self.name = name
         self.in_value = in_value
         self.out_value = out_value
-        self.store = store
+        self.store = FilesystemStore(store)
 
     def computation(self, *args):
         '''

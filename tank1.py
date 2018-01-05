@@ -5,8 +5,8 @@ import argparse
 
 def main(args):
     valve = Valve(args.name_valve, 
-                  args.valve_in, 
-                  args.valve_out, 
+                  None, 
+                  None, 
                   args.storename, 
                   args.opened) 
     valve.start("valve-tank1", args.period, args.duration, args.valve_state)
@@ -32,14 +32,12 @@ if __name__ == "__main__":
     parser.add_argument("--in_value", dest="in_value", action="store")
     parser.add_argument("--out_value", dest="out_value", action="store")
     parser.add_argument("--name_valve", dest="name_valve", action="store")
-    parser.add_argument("--valve_in", dest="valve_in", action="store")
-    parser.add_argument("--valve_out", dest="valve_out", action="store")
-    parser.add_argument("--opened", dest="opened",type=bool, action="store")
+    parser.add_argument("--opened", dest="opened",type=bool, default=True, action="store")
     parser.add_argument("--storename", dest="storename", action="store")
     parser.add_argument("--water_level", dest="water_level", action="store")
     parser.add_argument("--valve_state", dest="valve_state", action="store")
-    parser.add_argument("--period", dest="period",type=int ,action="store")
-    parser.add_argument("--duration", dest="duration", type=int, action="store") 
+    parser.add_argument("--period", dest="period", type=int, default= 1, action="store")
+    parser.add_argument("--duration", dest="duration", type=int, default=600, action="store") 
     args = parser.parse_args()
 
     main(args)
