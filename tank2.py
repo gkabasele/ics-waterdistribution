@@ -4,7 +4,7 @@ import argparse
 def main(args):
     tank = Tank(args.name,
                 args.in_value,
-                None,
+                "",
                 args.storename,
                 args.height,
                 args.radius,
@@ -23,7 +23,7 @@ if __name__ == "__main__":
     parser.add_argument("--storename", dest="storename", action="store")
     parser.add_argument("--water_level", dest="water_level", action="store")
     parser.add_argument("--period", dest="period", type=int, default=1, action="store")
-    parser.add_argument("--duration", dest="duration", type=int, default=600, action="store")
+    parser.add_argument("--duration", dest="duration", type=int, default=60, action="store")
     args = parser.parse_args()
 
     main(args)

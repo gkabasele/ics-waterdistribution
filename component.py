@@ -6,7 +6,7 @@ from utils import PeriodicTask
 from simplekv.fs import FilesystemStore
 GRAVITY = 9.8
 
-class Component():
+class Component(object):
 
     def __init__(self, name, in_value, out_value, store):
         '''
@@ -26,25 +26,28 @@ class Component():
         '''
         print "This method must be overriden"
 
-    def get(self, name):
+    def get(self, name, typeobj):
         '''
             Get value from actuators
         '''
-        return self.store.get(name)
+        return typeobj(self.store.get(name))
 
     def set(self, name, value):
         '''
             Set value to sensors
         '''
-        store.set(name, value)
+        self.store.put(name, str(value))
 
     def start(self,name, period, duration, *args):
-        try:
-            task = PeriodicTask(name, period, duration ,self.computation, *args) 
-            task.start()
-            task.join()
-        except:
-            print "Error: unable to start thread"
+        #try:
+        #    task = PeriodicTask(name, period, duration ,self.computation, *args) 
+        #    task.start()
+        #    task.join()
+        #except:
+        #    print "Error: unable to start thread"
+        task = PeriodicTask(name, period, duration ,self.computation, *args) 
+        task.start()
+        task.join()
 
 
 class Pump(Component):
@@ -53,7 +56,7 @@ class Pump(Component):
             - flow_out : flow_out outputed by the pump (m^3/s)
             - running : is the pump running or not
         '''
-        super.__init__(name, in_value, out_value, store)
+        super(Pump, self).__init__(name, in_value, out_value, store)
         self.flow_out = flow_out
         self.running = running
 
@@ -62,11 +65,12 @@ class Pump(Component):
             - Check if running from actuators
             - Change flow_out accordingly
         '''
-        self.running = self.get(args)
+        var_running = args[0][0]
+        self.running = self.get(var_running, bool)
         if not self.running:
             self.flow_out = 0
-        else :
-            self.flow_out = self.get(args)
+        #else :
+        #    self.flow_out = self.get(*args)
          
         self.set(self.out_value, self.flow_out)
 
@@ -75,7 +79,7 @@ class Pump(Component):
 
 class Tank(Component):
 
-    def __init__(self, name, in_value, out_value, height, radius ,level, hole, valve = None):
+    def __init__(self, name, in_value, out_value, store, height, radius ,level, hole, valve = None):
         '''
             - height : height of the tank (m) 
             - radius : radius of the tank (m)
@@ -83,7 +87,7 @@ class Tank(Component):
             - hole : hole size in (m)
             - valve : valve to open outlet placed on the tank 
         '''
-        super.__init__(name, in_value, out_value, store)
+        super(Tank, self).__init__(name, in_value, out_value, store)
         self.height = height
         self.radius = radius
         self.level = level
@@ -103,12 +107,18 @@ class Tank(Component):
                 - g : acceleration of gravity (9.8 m/s^2)
                 Conservation of mass : flow_in - flow_out
             ''' 
-            if self.valve.opened:
+            #FIXME check args
+            var_level = args[0][0]
+
+            if self.valve and self.valve.opened:
                 flow_out = (math.pi* (self.hole**2 )* math.sqrt(2*self.level*GRAVITY))
             else: 
                 flow_out = 0
 
-            flow_in = self.get(self.in_value)
+            try:
+                flow_in = self.get(self.in_value, float)
+            except KeyError:
+                flow_in = 0
             # FIXME change right formula
             rise = flow_out  - flow_in
             self.level = self.level - rise
@@ -117,15 +127,16 @@ class Tank(Component):
             else:
                 self.level = 0 
 
-            self.set(self.out_value, flow_out)
-            self.set(args,self.level)
+            if self.out_value != "":
+                self.set(self.out_value, flow_out)
+            self.set(var_level, self.level)
 
 class Valve(Component):
     def __init__(self, name, in_value, out_value, store, opened):
         '''
             - opened, flag whether the valve is running or not
         '''
-        super.__init__(name, in_value, out_value, store)
+        super(Valve, self).__init__(name, in_value, out_value, store)
         self.opened = opened
 
     def computation(self, *args):
@@ -133,16 +144,20 @@ class Valve(Component):
             - check actuator from store
             - change status, open or not
         '''
-        self.opened = self.get(args)
+        var_opened = args[0][0]
+        try :
+            self.opened = self.get(var_opened, bool)
+        except KeyError:
+            self.set(var_opened, self.opened)
 
-class Pipe(Component):
+class Pipeline(Component):
     def __init__(self, name, in_value, out_value, store, flow_rate, length=None, diameter=None):
         '''
             - diameter :  size in m
             - flow_rate : flow rate in the pipe in m^3/s
             - length : length the pipe in meter
         '''
-        super.__init__(name, in_value, out_value, store)
+        super(Pipeline, self).__init__(name, in_value, out_value, store)
         self.diameter = diameter
         self.flow_rate = flow_rate
         self.length = length 
@@ -152,8 +167,13 @@ class Pipe(Component):
             - compute out from in and diameter
             - compute flow rate 
         '''
-        self.flow_rate = self.get(in_value)
-        self.set(args, self.flow_rate)
-        self.set(out_value, self.flow_rate)
+        var_flow_rate = args[0][0]
+        try:
+            self.flow_rate = self.get(self.in_value, float)
+        except KeyError:
+            pass
+
+        self.set(var_flow_rate, self.flow_rate)
+        self.set(self.out_value, self.flow_rate)
 
 

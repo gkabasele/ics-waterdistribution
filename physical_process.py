@@ -1,5 +1,6 @@
 from simplekv.fs import FilesystemStore
 import os
+import shutil
 import signal
 import subprocess
 
@@ -29,12 +30,17 @@ STORE = './variables'
 
 
 '''
+if os.path.exists('./variables'):
+    shutil.rmtree(STORE)
 
 # CMD Variable
 STR = '--storename'
 IN = '--in_value'
 OUT = '--out_value'
 FR = '--flow_rate'
+WTR = '--water_level'
+VLV = '--valve_state'
+PFL = '--pipe_fl'
 
 
 # Flow circuit
@@ -54,7 +60,6 @@ TANK1_LEVEL = "tank1_level"
 TANK2_LEVEL = "tank2_level"
 
 TANK1_VALVE = "tank1_valve"
-TANK2_VALVE = "tank2_valve"
 
 FLOW_RATE = "pipe_flow_rate"
 
@@ -67,14 +72,14 @@ py = ['/usr/bin/python']
 pump_cmd = ['pump.py', OUT, PUMP_OUT, STR, STORE]
 
 tank1_cmd = ['tank1.py', IN, TANK1_IN, OUT, 
-                TANK1_OUT, STR, STORE, 'water_level',
-                TANK1_LEVEL, 'valve_state', TANK1_VALVE]
+                TANK1_OUT, STR, STORE, WTR ,
+                TANK1_LEVEL, VLV, TANK1_VALVE]
 
 pipe_cmd = ['pipeline.py', IN, PIPE_IN, OUT, 
             PIPE_OUT, STR, STORE, 
-            FR, FLOW_RATE]
+            PFL, FLOW_RATE]
 
-tank2_cmd = ['tank2.py', IN, TANK2_IN, STR, STORE, 'water_level']
+tank2_cmd = ['tank2.py', IN, TANK2_IN, STR, STORE, WTR, TANK2_LEVEL]
 
 print "Creating Pump Process \n"
 pump_proc = subprocess.Popen(py + pump_cmd)
