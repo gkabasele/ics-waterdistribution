@@ -39,13 +39,11 @@ class Component(object):
         self.store.put(name, str(value))
 
     def start(self,name, period, duration, *args):
-        #try:
-        #    task = PeriodicTask(name, period, duration ,self.computation, *args) 
-        #    task.start()
-        #    task.join()
-        #except:
-        #    print "Error: unable to start thread"
+        '''
+            Start a periodic task by starting a thread
+        '''
         task = PeriodicTask(name, period, duration ,self.computation, *args) 
+        print "Starting Component %s with task %s" % (self.name, name)
         task.start()
         task.join()
 
@@ -59,6 +57,7 @@ class Pump(Component):
         super(Pump, self).__init__(name, in_value, out_value, store)
         self.flow_out = flow_out
         self.running = running
+        
 
     def computation(self, *args):
         '''
@@ -66,7 +65,10 @@ class Pump(Component):
             - Change flow_out accordingly
         '''
         var_running = args[0][0]
-        self.running = self.get(var_running, bool)
+        try:
+            self.running = self.get(var_running, bool)
+        except KeyError:
+            self.set(var_running, self.running)    
         if not self.running:
             self.flow_out = 0
         #else :
@@ -94,6 +96,10 @@ class Tank(Component):
         self.hole = hole
         self.valve = valve
 
+
+    '''
+        args: water_level, valve
+    '''
     def computation(self, *args):
             '''
                 - compute output rate
@@ -109,8 +115,15 @@ class Tank(Component):
             ''' 
             #FIXME check args
             var_level = args[0][0]
+            var_valve = args[0][1]
 
-            if self.valve and self.valve.opened:
+            if var_valve:
+                try:
+                    self.valve = self.get(var_valve,bool)
+                except KeyError:
+                    self.set(var_valve, self.valve)
+
+            if self.valve:
                 flow_out = (math.pi* (self.hole**2 )* math.sqrt(2*self.level*GRAVITY))
             else: 
                 flow_out = 0
