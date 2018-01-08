@@ -2,6 +2,12 @@ import threading
 import sys
 import time
 
+HR = "hr"
+CO = "co"
+IR = "ir"
+DI = "di"
+
+registers_type = {DI:2, IR:4, HR:3, CO:1}
 
 class PeriodicTask(threading.Thread):
     # period in second
