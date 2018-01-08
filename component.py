@@ -124,7 +124,7 @@ class Tank(Component):
                     self.set(var_valve, self.valve)
 
             if self.valve:
-                flow_out = (math.pi* (self.hole**2 )* math.sqrt(2*self.level*GRAVITY))
+                flow_out = (math.pi * (self.hole**2 ) * math.sqrt(2*self.level*GRAVITY))
             else: 
                 flow_out = 0
 
