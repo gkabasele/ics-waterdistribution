@@ -20,7 +20,7 @@ class ComponentQueue(Queue):
         self.out_comp = None
         super(ComponentQueue, self).__init__(maxsize=0)
 
-class Component(thrading.Thread):
+class Component(object):
 
     def __init__(self, name, inbuf, outbuf, store):
         '''Physical component of an industrial control system 
@@ -38,6 +38,7 @@ class Component(thrading.Thread):
         if outbuf:
             outbuf.in_comp = name
         self.store = FilesystemStore(store)
+        self.task = None
 
     def set_inbuf(self, inbuf):
         self.inbuf = inbuf
@@ -78,11 +79,21 @@ class Component(thrading.Thread):
         if not self.outbuf.full():
             item = self.outbuf.put(item)
 
+    def run(self, period,*args):
+        if self.task:
+            task.start(period)
+        else:
+            self.task = LoopingCall(f=self.computation, args)
+            self.task.start(period)
+
+    def stop(self):
+        self.task.stop()
+
     def start(self,name, period, duration, *args):
         '''
             Start a periodic task by starting a thread
         '''
-        task = PeriodicTask(name, period, duration ,self.computation, *args) 
+        task = PeriodicTask(name, period, duration ,self.computation, args) 
         print "Starting Component %s with task %s" % (self.name, name)
         task.start()
         task.join()

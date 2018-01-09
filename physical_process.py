@@ -19,5 +19,5 @@ class PhysicalProcess(object):
 
     def run(self, period, duration, fx, *args, **kwargs):
         loop = LoopingCall(f=fx, args, kwargs)
-        loop.start(time)
+        loop.start(period)
 
