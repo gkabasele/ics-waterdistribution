@@ -1,6 +1,7 @@
 import threading
 import sys
 import time
+import itertools
 
 HR = "hr"
 CO = "co"
@@ -37,3 +38,15 @@ class PeriodicTask(threading.Thread):
 
     def run(self):
         self.do_every()
+
+
+def first_true(iterable, default=False, pred=None):
+    """Returns the first true value in the iterable.
+
+    If no true value is found, returns *default*
+
+    If *pred* is not None, returns the first item
+    for which pred(item) is true.
+
+    """
+    return next(filter(pred, iterable), default)
