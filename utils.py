@@ -8,6 +8,8 @@ CO = "co"
 IR = "ir"
 DI = "di"
 
+GRAVITY = 9.8
+
 registers_type = {DI:2, IR:4, HR:3, CO:1}
 
 class PeriodicTask(threading.Thread):
@@ -50,3 +52,13 @@ def first_true(iterable, default=False, pred=None):
 
     """
     return next(filter(pred, iterable), default)
+
+def wait_until(predicate, timeout=30, period=0.25, *args, **kwargs):
+    end = time.time() + timeout
+    res = False
+    while time.time() < end:
+        if predicate(*args, **kwargs):
+            res = True
+            break
+        time.sleep(period)
+    return res

@@ -1,5 +1,6 @@
 import sys
 import time
+import Queue
 from utils import *
 from simplekv.fs import FilesystemStore
 from pymodbus.server.sync import ModbusTcpServer

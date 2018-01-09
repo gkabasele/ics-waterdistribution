@@ -3,40 +3,80 @@ import os
 import redis
 import math
 from utils import PeriodicTask
+import threading
 from simplekv.fs import FilesystemStore
-GRAVITY = 9.8
+from twisted.internet.task import LoopingCall
+from twisted.internet import reactor
 
-class Component(object):
+class ComponentQueue(Queue):
 
-    def __init__(self, name, in_value, out_value, store):
+    def __init__(self, size):
+        '''Queue to pass physical element (water, oil...)
+
+            :param in_comp: name of the producer component
+            :param out_comp: name of the consummer component
         '''
-            Physical component of an industrial control system 
-            - name : name of the component
-            - in_value : key where to get value 
-            - out_value : key where to set value 
+        self.in_comp = None
+        self.out_comp = None
+        super(ComponentQueue, self).__init__(maxsize=0)
+
+class Component(thrading.Thread):
+
+    def __init__(self, name, inbuf, outbuf, store):
+        '''Physical component of an industrial control system 
+
+            :param  name: The name of the component
+            :param  inbuf: Buffer to retrieve value
+            :param  outbuf:  Buffer to set value
+            :param  store: location of the store to set processes variables
         '''
         self.name = name
-        self.in_value = in_value
-        self.out_value = out_value
+        self.inbuf = inbuf
+        if inbuf:
+            inbuf.out_comp = name
+        self.outbuf = outbuf
+        if outbuf:
+            outbuf.in_comp = name
         self.store = FilesystemStore(store)
 
+    def set_inbuf(self, inbuf):
+        self.inbuf = inbuf
+        inbuf.out_comp = self.name
+
+    def set_outbuf(self, outbuf):
+        self.outbuf = outbuf
+        outbuf.in_comp = self.name
+
     def computation(self, *args):
+        '''Computation done by the component
+
+           :param  args: argument used by the component 
         '''
-            Computation done by the component 
-        '''
-        print "This method must be overriden"
+        raise NotImplementedError
 
     def get(self, name, typeobj):
-        '''
-            Get value from actuators
+        '''Get value from actuators
+
+           :param name: name of the process variable
+           :param typeobj: type of the process variable
         '''
         return typeobj(self.store.get(name))
 
     def set(self, name, value):
-        '''
-            Set value to sensors
+        '''Set value to sensors
+           
+           :param name: name of the process variable
+           :param value: value to set to the process variable 
         '''
         self.store.put(name, str(value))
+
+    def read_buffer(self):
+        if not self.inbuf.empty():
+            item = self.inbuf.get()
+
+    def write_buffer(self, item):
+        if not self.outbuf.full():
+            item = self.outbuf.put(item)
 
     def start(self,name, period, duration, *args):
         '''
@@ -49,12 +89,13 @@ class Component(object):
 
 
 class Pump(Component):
-    def __init__(self, name, in_value, out_value, store, flow_out, running):
+    def __init__(self, name, inbuf, outbuf, store, flow_out, running):
+        ''' Pump in a water distribution system
+
+            :param flow_out: volume of water outputed by the pump (m^3/s)
+            :param running: is the pump running or not
         '''
-            - flow_out : flow_out outputed by the pump (m^3/s)
-            - running : is the pump running or not
-        '''
-        super(Pump, self).__init__(name, in_value, out_value, store)
+        super(Pump, self).__init__(name, inbuf, outbuf, store)
         self.flow_out = flow_out
         self.running = running
         
@@ -73,23 +114,24 @@ class Pump(Component):
             self.flow_out = 0
         #else :
         #    self.flow_out = self.get(*args)
-         
-        self.set(self.out_value, self.flow_out)
+        self.write_buffer(self.flow_out)
+
 
 
 
 
 class Tank(Component):
 
-    def __init__(self, name, in_value, out_value, store, height, radius ,level, hole, valve = None):
+    def __init__(self, name, inbuf, outbuf, store, height, radius ,level, hole, valve = None):
+        ''' Water Tank in a water distribution system system
+
+            :param height: height of the tank (m) 
+            :param radius: radius of the tank (m)
+            :param level:  level of the water in the tank
+            :param hole: hole size in (m)
+            :param valve: valve to open outlet placed on the tank 
         '''
-            - height : height of the tank (m) 
-            - radius : radius of the tank (m)
-            - level :  level of the water in the tank
-            - hole : hole size in (m)
-            - valve : valve to open outlet placed on the tank 
-        '''
-        super(Tank, self).__init__(name, in_value, out_value, store)
+        super(Tank, self).__init__(name, inbuf, outbuf, store)
         self.height = height
         self.radius = radius
         self.level = level
@@ -97,9 +139,6 @@ class Tank(Component):
         self.valve = valve
 
 
-    '''
-        args: water_level, valve
-    '''
     def computation(self, *args):
             '''
                 - compute output rate
@@ -128,9 +167,8 @@ class Tank(Component):
             else: 
                 flow_out = 0
 
-            try:
-                flow_in = self.get(self.in_value, float)
-            except KeyError:
+            flow_in = self.inbuf.read_buffer()
+            if not flow_in:
                 flow_in = 0
             # FIXME change right formula
             rise = flow_out  - flow_in
@@ -140,16 +178,16 @@ class Tank(Component):
             else:
                 self.level = 0 
 
-            if self.out_value != "":
-                self.set(self.out_value, flow_out)
+            if self.outbuf != "":
+                self.set(self.outbuf, flow_out)
             self.set(var_level, self.level)
 
 class Valve(Component):
-    def __init__(self, name, in_value, out_value, store, opened):
+    def __init__(self, name, inbuf, outbuf, store, opened):
+        '''Valve in a water distribution system
+            :param opened: is the valve open or not
         '''
-            - opened, flag whether the valve is running or not
-        '''
-        super(Valve, self).__init__(name, in_value, out_value, store)
+        super(Valve, self).__init__(name, inbuf, outbuf, store)
         self.opened = opened
 
     def computation(self, *args):
@@ -164,13 +202,13 @@ class Valve(Component):
             self.set(var_opened, self.opened)
 
 class Pipeline(Component):
-    def __init__(self, name, in_value, out_value, store, flow_rate, length=None, diameter=None):
+    def __init__(self, name, inbuf, outbuf, store, flow_rate, length=None, diameter=None):
+        '''Pipeline in a water distribution
+            :param diameter:  size in m
+            :param flow_rate: flow rate in the pipe in m^3/s
+            :param length: length the pipe in meter
         '''
-            - diameter :  size in m
-            - flow_rate : flow rate in the pipe in m^3/s
-            - length : length the pipe in meter
-        '''
-        super(Pipeline, self).__init__(name, in_value, out_value, store)
+        super(Pipeline, self).__init__(name, inbuf, outbuf, store)
         self.diameter = diameter
         self.flow_rate = flow_rate
         self.length = length 
@@ -181,12 +219,9 @@ class Pipeline(Component):
             - compute flow rate 
         '''
         var_flow_rate = args[0][0]
-        try:
-            self.flow_rate = self.get(self.in_value, float)
-        except KeyError:
-            pass
+        self.flow_rate = self.read_buffer()
 
         self.set(var_flow_rate, self.flow_rate)
-        self.set(self.out_value, self.flow_rate)
+        self.write_buffer(self.flow_rate)
 
 
