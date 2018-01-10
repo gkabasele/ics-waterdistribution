@@ -136,23 +136,21 @@ class Pump(Component):
 
 class Tank(Component):
 
-    def __init__(self, name, inbuf, outbuf, store, height, radius ,level, hole, valve = None):
+    def __init__(self, name, inbuf, outbuf, store, height, diameter ,level, hole, valve = None):
         ''' Water Tank in a water distribution system system
 
             :param height: height of the tank (m) 
-            :param radius: radius of the tank (m)
+            :param diameter: diameter of the tank (m)
             :param level:  level of the water in the tank
-            :param hole: hole size in (m)
+            :param hole: diameter of the hole size in (m)
             :param valve: valve to open outlet placed on the tank 
         '''
         super(Tank, self).__init__(name, inbuf, outbuf, store)
         self.height = height
-        self.radius = radius
+        self.diameter = diameter
         self.level = level
         self.hole = hole
         self.valve = valve
-
-
 
     def computation(self, *args):
             '''
@@ -182,24 +180,17 @@ class Tank(Component):
             flow_in = self.read_buffer()
             if not flow_in:
                 flow_in = 0
-            # FIXME Formula of water level rise
-            self.level += flow_in 
-            if self.level >= 0 :
-                self.level = min(self.level, self.height) 
-            else:
-                self.level = 0 
+            # FIXME Verify Formula of water level rise
+            self.level += (flow_in  / (math.pi * (self.diameter/2)**2))
+            self.level = min(self.level, self.height) 
 
             if self.valve:
-                flow_out = (math.pi * (self.hole**2 ) * math.sqrt(2*self.level*GRAVITY))
+                flow_out = (math.pi * ((self.hole/2)**2 ) * math.sqrt(2*self.level*GRAVITY))
             else: 
                 flow_out = 0
 
-            rise = flow_out - flow_in
-            self.level = self.level - rise
-            if self.level >= 0 :
-                self.level = min(self.level , self.height)
-            else:
-                self.level = 0
+            self.level -= (flow_out /(math.pi * (self.diameter/2)**2)) 
+            self.level = max(self.level, 0)
 
             self.write_buffer(flow_out)
             self.set(var_level, self.level)
