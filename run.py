@@ -2,6 +2,7 @@ import os
 import shutil
 import time
 from component import *
+from twisted.internet import reactor 
 
 
 '''
@@ -12,10 +13,11 @@ from component import *
 '''
 
 STORE = './variables'
+PERIOD = 1
 DURATION = 60
 
-if os.path.exists('./variables'):
-    shutil.rmtree(STORE)
+if os.path.exists('variables'):
+    shutil.rmtree('variables')
     
 
 #Variable Name
@@ -33,24 +35,25 @@ tank1_pipeline_q = ComponentQueue(1)
 pipeline_tank2_q = ComponentQueue(1)
 
 
-pump = Pump('pump',None, pump_tank1_q, store, 5, True)
-pump.run(1, PUMP_RNG)
+pump = Pump('pump',None, pump_tank1_q, STORE, 5, True)
+pump.start('pump', PERIOD, DURATION, PUMP_RNG)
 
-tank1 = Tank('tank1', pump_tank1_q, tank1_pipeline_q, store, 50, 30, 0, 10, True)
-tank1.run(1, TANK1_LVL, TANK1_VLV)
+tank1 = Tank('tank1', pump_tank1_q, tank1_pipeline_q, STORE, 50, 30, 0, 10, True)
+tank1.start('tank1', PERIOD, DURATION, TANK1_LVL, TANK1_VLV)
 
-pipeline = Pipeline('pipeline', tank1_pipeline_q, pipeline_tank2_q, store, 0)
-pipeline.run(1, FLOW_RATE)
+pipeline = Pipeline('pipeline', tank1_pipeline_q, pipeline_tank2_q, STORE, 0)
+pipeline.start('pipeline', PERIOD, DURATION, FLOW_RATE)
 
-tank2 = Tank('tank2', pipeline_tank2_q, None, store, 50, 30, 0, 10, False) 
-tank2.run(1, TANK2_LVL)
+tank2 = Tank('tank2', pipeline_tank2_q, None, STORE, 50, 30, 0, 10, False) 
+tank2.start('tank2', PERIOD, DURATION, TANK2_LVL)
 
-end = time.time() + DURATION
+pump.wait_end()
+tank1.wait_end()
+pipeline.wait_end()
+tank2.wait_end()
+#reactor.run()
 
-while time.time() < end:
-    pass
-
-pump.stop()
-tank1.stop()
-pipeline.stop()
-tank2.stop()
+#pump.stop()
+#tank1.stop()
+#pipeline.stop()
+#tank2.stop()

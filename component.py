@@ -2,13 +2,14 @@ import sys
 import os
 import redis
 import math
-from utils import PeriodicTask
 import threading
+import Queue
 from simplekv.fs import FilesystemStore
 from twisted.internet.task import LoopingCall
 from twisted.internet import reactor
+from utils import *
 
-class ComponentQueue(Queue):
+class ComponentQueue(Queue.Queue, object):
 
     def __init__(self, size):
         '''Queue to pass physical element (water, oil...)
@@ -18,7 +19,7 @@ class ComponentQueue(Queue):
         '''
         self.in_comp = None
         self.out_comp = None
-        super(ComponentQueue, self).__init__(maxsize=0)
+        super(ComponentQueue, self).__init__(maxsize=size)
 
 class Component(object):
 
@@ -72,31 +73,35 @@ class Component(object):
         self.store.put(name, str(value))
 
     def read_buffer(self):
-        if not self.inbuf.empty():
+        if self.inbuf and not self.inbuf.empty():
             item = self.inbuf.get()
+            return item
 
     def write_buffer(self, item):
-        if not self.outbuf.full():
-            item = self.outbuf.put(item)
+        if self.outbuf and not self.outbuf.full():
+            self.outbuf.put(item)
 
     def run(self, period,*args):
         if self.task:
             task.start(period)
         else:
-            self.task = LoopingCall(f=self.computation, args)
+            self.task = LoopingCall(f=self.computation, arg=args)
             self.task.start(period)
 
     def stop(self):
         self.task.stop()
 
-    def start(self,name, period, duration, *args):
+    def start(self,name, period, duration=None, *args):
         '''
             Start a periodic task by starting a thread
         '''
-        task = PeriodicTask(name, period, duration ,self.computation, args) 
+        self.task = PeriodicTask(name, period, self.computation, duration, *args) 
         print "Starting Component %s with task %s" % (self.name, name)
-        task.start()
-        task.join()
+        self.task.start()
+
+
+    def wait_end(self):    
+        self.task.join()
 
 
 class Pump(Component):
@@ -123,8 +128,6 @@ class Pump(Component):
             self.set(var_running, self.running)    
         if not self.running:
             self.flow_out = 0
-        #else :
-        #    self.flow_out = self.get(*args)
         self.write_buffer(self.flow_out)
 
 
@@ -150,6 +153,7 @@ class Tank(Component):
         self.valve = valve
 
 
+
     def computation(self, *args):
             '''
                 - compute output rate
@@ -165,32 +169,39 @@ class Tank(Component):
             ''' 
             #FIXME check args
             var_level = args[0][0]
-            var_valve = args[0][1]
+            var_valve = None 
+            if self.valve:
+                var_valve = args[0][1]
 
             if var_valve:
                 try:
                     self.valve = self.get(var_valve,bool)
                 except KeyError:
                     self.set(var_valve, self.valve)
+            
+            flow_in = self.read_buffer()
+            if not flow_in:
+                flow_in = 0
+            # FIXME Formula of water level rise
+            self.level += flow_in 
+            if self.level >= 0 :
+                self.level = min(self.level, self.height) 
+            else:
+                self.level = 0 
 
             if self.valve:
                 flow_out = (math.pi * (self.hole**2 ) * math.sqrt(2*self.level*GRAVITY))
             else: 
                 flow_out = 0
 
-            flow_in = self.inbuf.read_buffer()
-            if not flow_in:
-                flow_in = 0
-            # FIXME change right formula
-            rise = flow_out  - flow_in
+            rise = flow_out - flow_in
             self.level = self.level - rise
             if self.level >= 0 :
-                self.level = min(self.level, self.height) 
+                self.level = min(self.level , self.height)
             else:
-                self.level = 0 
+                self.level = 0
 
-            if self.outbuf != "":
-                self.set(self.outbuf, flow_out)
+            self.write_buffer(flow_out)
             self.set(var_level, self.level)
 
 class Valve(Component):
@@ -223,6 +234,7 @@ class Pipeline(Component):
         self.diameter = diameter
         self.flow_rate = flow_rate
         self.length = length 
+
 
     def computation(self, *args):
         '''

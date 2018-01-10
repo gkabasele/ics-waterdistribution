@@ -14,11 +14,11 @@ registers_type = {DI:2, IR:4, HR:3, CO:1}
 
 class PeriodicTask(threading.Thread):
     # period in second
-    def __init__(self, name, period, duration, task,*args):
+    def __init__(self, name, period, task, duration=None,*args):
         threading.Thread.__init__(self)
         self.name = name
         self.period = period
-        self.duration = duration
+        self.duration = duration 
         self.task = task
         self.args = args
 
@@ -33,7 +33,7 @@ class PeriodicTask(threading.Thread):
         start_time = time.time()
         while True:
             current_time = time.time()
-            if (current_time - start_time) >= self.duration:
+            if self.duration and (current_time - start_time) >= self.duration:
                 break
             self.task(self.args)
             time.sleep(next(g))
