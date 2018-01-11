@@ -9,18 +9,21 @@ IR = "ir"
 DI = "di"
 
 GRAVITY = 9.8
+INBUF = "inbuf"
+OUTBF = "outbuf"
 
 registers_type = {DI:2, IR:4, HR:3, CO:1}
 
 class PeriodicTask(threading.Thread):
     # period in second
-    def __init__(self, name, period, task, duration=None,*args):
+    def __init__(self, name, period, task, duration=None,*args, **kwargs):
         threading.Thread.__init__(self)
         self.name = name
         self.period = period
         self.duration = duration 
         self.task = task
         self.args = args
+        self.kwargs = kwargs
 
     def do_every(self):
         def g_tick():
@@ -35,7 +38,7 @@ class PeriodicTask(threading.Thread):
             current_time = time.time()
             if self.duration and (current_time - start_time) >= self.duration:
                 break
-            self.task(self.args)
+            self.task(self.args, self.kwargs)
             time.sleep(next(g))
 
     def run(self):
