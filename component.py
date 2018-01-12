@@ -4,10 +4,14 @@ import redis
 import math
 import threading
 import Queue
+import logging
 from simplekv.fs import FilesystemStore
 from twisted.internet.task import LoopingCall
 from twisted.internet import reactor
 from utils import *
+
+logging.basicConfig(filename='lphys.log', level=logging.DEBUG, mode= 'w')
+
 
 class ComponentQueue(Queue.Queue, object):
 
@@ -23,7 +27,7 @@ class ComponentQueue(Queue.Queue, object):
 
 class Component(object):
 
-    def __init__(self, name, store):
+    def __init__(self, store, name):
 
         '''Physical component of an industrial control system 
 
@@ -101,13 +105,15 @@ class Component(object):
 
     def read_buffer(self, index ):
         inbuf = self.inbufs[index]
-        if inbuf and not inbuf.empty():
+        print "getting item"
+        if not inbuf.empty():
             item = inbuf.get()
             return item
 
     def write_buffer(self, item, index):
         outbuf = self.outbufs[index]
-        if outbuf and not outbuf.full():
+        print "putting item"
+        if not outbuf.full():
             outbuf.put(item)
 
     def add_task(self,name, period, duration=None, *args, **kwargs):
@@ -125,10 +131,10 @@ class Component(object):
         '''
         s= "Starting Component %s with task: \n" % self.name
         for k,v in self.tasks.iteritems():
-            s+= "\t%s\n"
+            s+= "\t%s\n" % k
             v.start()
 
-        print s
+        logging.info(s)
 
     def wait_end(self):    
         for v in self.tasks.itervalues():
@@ -140,17 +146,13 @@ class Pump(Component):
                  store, 
                  flow_out, 
                  running, 
-                 name='pump', 
-                 nminbuf=0, 
-                 in_size=1, 
-                 nmoutbuf=1, 
-                 out_size=1):
+                 name='pump'): 
         ''' Pump in a water distribution system
 
             :param flow_out: volume of water outputed by the pump (m^3/s)
             :param running: is the pump running or not
         '''
-        super(Pump, self).__init__(name, store, nminbuf, in_size, nmoutbuf, outbuf, out_size)
+        super(Pump, self).__init__(store, name)
         self.flow_out = flow_out
         self.running = running
         
@@ -161,10 +163,12 @@ class Pump(Component):
             - Change flow_out accordingly
         '''
         var_running = args[0][0]
-        try:
-            index_out = kwargs.get(OUTBUF) 
-        except:
-            print "No index provided"
+        print args
+        print kwargs
+        index_out = kwargs.get(OUTBUF) 
+        if not index_out:
+            logging.debug("No index provided for %s" % self.name)
+            return 
         try:
             self.running = self.get(var_running, bool)
         except KeyError:
@@ -181,12 +185,8 @@ class Tank(Component):
                  diameter,
                  hole,
                  level = 0,
-                 valve = None,
-                 name = 'tank', 
-                 nminbuf = 1,
-                 in_size = 1,
-                 nmoutbuf = 1,
-                 out_size = 1):
+                 valve = False,
+                 name = 'tank'): 
 
         ''' Water Tank in a water distribution system system
 
@@ -196,7 +196,7 @@ class Tank(Component):
             :param hole: diameter of the hole size in (m)
             :param valve: valve to open outlet placed on the tank 
         '''
-        super(Tank, self).__init__(name, store, nminbuf, in_size, nmoutbuf, out_size)
+        super(Tank, self).__init__(store, name)
         self.height = height
         self.diameter = diameter
         self.level = level
@@ -218,11 +218,12 @@ class Tank(Component):
             ''' 
             #FIXME check args
             var_level = args[0][0]
-            try:
-                index_in = kwargs.get(INBUF)
-                index_out = kwargs.get(OUTBUF)
-            except KeyError:
-                print "No index provided"
+            print args
+            print kwargs
+            index_in = kwargs.get(INBUF)
+            index_out = kwargs.get(OUTBUF)
+            if not index_in or not index_out:
+                logging.debug("No index provided %s" % self.name)
 
             var_valve = None 
             if self.valve:
@@ -234,8 +235,10 @@ class Tank(Component):
                 except KeyError:
                     self.set(var_valve, self.valve)
             
-            flow_in = self.read_buffer(index_in)
-            if not flow_in:
+            if self.has_inbuf():
+                logging.debug("reading buffer %s" % self.name)
+                flow_in = self.read_buffer(index_in)
+            else:
                 flow_in = 0
             # FIXME Verify Formula of water level rise
             self.level += (flow_in  / (math.pi * (self.diameter/2)**2))
@@ -249,22 +252,20 @@ class Tank(Component):
             self.level -= (flow_out /(math.pi * (self.diameter/2)**2)) 
             self.level = max(self.level, 0)
 
-            self.write_buffer(flow_out, index_out)
+            if self.has_outbuf():
+                self.write_buffer(flow_out, index_out)
+
             self.set(var_level, self.level)
 
 class Valve(Component):
     def __init__(self, 
                  store, 
                  opened, 
-                 name='valve', 
-                 nminbuf=1, 
-                 in_size=1, 
-                 outbuf=1, 
-                 out_size=1):
+                 name='valve'): 
         '''Valve in a water distribution system
             :param opened: is the valve open or not
         '''
-        super(Valve, self).__init__(name, store, nminbuf, in_size,  nmoutbuf, out_size)
+        super(Valve, self).__init__(store, name)
         self.opened = opened
 
     def computation(self, *args, **kwargs):
@@ -282,21 +283,17 @@ class Valve(Component):
 class Pipeline(Component):
     def __init__(self, 
                  store, 
-                 flow_rate, 
-                 name='pipeline', 
-                 nminbuf=1, 
-                 in_size=1, 
-                 nmoutbuf=1, 
-                 out_size=1, 
-                 length=None, 
-                 diameter=None):
+                 length,
+                 diameter,
+                 flow_rate = 0,
+                 name='pipeline'): 
 
         '''Pipeline in a water distribution
             :param diameter:  size in m
             :param flow_rate: flow rate in the pipe in m^3/s
             :param length: length the pipe in meter
         '''
-        super(Pipeline, self).__init__(name, store, nmbinbuf, in_size, nmoutbuf, out_size)
+        super(Pipeline, self).__init__(store, name)
         self.diameter = diameter
         self.flow_rate = flow_rate
         self.length = length 
@@ -308,11 +305,12 @@ class Pipeline(Component):
             - compute flow rate 
         '''
         var_flow_rate = args[0][0]
-        try:
-            index_in = kwargs.get(INBUF)
-            index_out = kwargs.get(OUTBUF)
-        except KeyError:
-            print "no index provided"
+
+        index_in = kwargs.get(INBUF)
+        index_out = kwargs.get(OUTBUF)
+        if not index_in and not index_out:
+            logging.debug("no index provided %s" % self.name)
+            return 
         self.flow_rate = self.read_buffer(index_in)
 
         self.set(var_flow_rate, self.flow_rate)

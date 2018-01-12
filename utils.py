@@ -10,7 +10,7 @@ DI = "di"
 
 GRAVITY = 9.8
 INBUF = "inbuf"
-OUTBF = "outbuf"
+OUTBUF = "outbuf"
 
 registers_type = {DI:2, IR:4, HR:3, CO:1}
 
@@ -38,12 +38,22 @@ class PeriodicTask(threading.Thread):
             current_time = time.time()
             if self.duration and (current_time - start_time) >= self.duration:
                 break
-            self.task(self.args, self.kwargs)
+            self.task(*self.args, **self.kwargs)
             time.sleep(next(g))
 
     def run(self):
         self.do_every()
 
+
+class CustomDict(dict):
+    ''' Custom dictionnary to ensure that a key is inserted only once
+        
+    '''
+    def __setitem__(self, k, v):
+        if k in self.keys():
+            raise ValueError("Key already exists")
+        else:
+            return super(CustomDict, self).__setitem__(k, v)
 
 def first_true(iterable, default=False, pred=None):
     """Returns the first true value in the iterable.

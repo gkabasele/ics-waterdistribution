@@ -1,6 +1,7 @@
 import os
 import shutil
 import time
+from physical_process import  PhysicalProcess
 from component import *
 from twisted.internet import reactor 
 
@@ -16,44 +17,44 @@ STORE = './variables'
 PERIOD = 1
 DURATION = 60
 
-if os.path.exists('variables'):
-    shutil.rmtree('variables')
-    
+# Constant
+# tank
+t_height= 50
+t_diameter = 30
+t_hole = 10
+# pipeline
+p_diameter = 20
+p_length = 40
 
-#Variable Name
+# Variable Name
 PUMP_RNG = "pump_running"
 TANK1_LVL = "tank1_level"
 TANK2_LVL = "tank2_level"
 TANK1_VLV = "tank1_valve"
 FLOW_RATE = "flow_rate"
 
+p = PhysicalProcess(STORE)
 
-pump_tank1_q = ComponentQueue(1)
+pump = p.add_component(Pump, 5, True)
+tank1 = p.add_component(Tank, t_height, t_diameter, t_hole, valve=True, name='tank1' )
+tank2 = p.add_component(Tank, t_height, t_diameter, t_hole, valve=False, name='tank2')
+pipeline = p.add_component(Pipeline, p_length, p_diameter)
 
-tank1_pipeline_q = ComponentQueue(1)
+p.add_variable(pump, PUMP_RNG)
+p.add_variable(tank1, TANK1_LVL)
+p.add_variable(tank1, TANK1_VLV)
+p.add_variable(pipeline, FLOW_RATE)
+p.add_variable(tank2, TANK2_LVL)
 
-pipeline_tank2_q = ComponentQueue(1)
+index_pump_tank = p.add_interaction(pump, tank1)
+index_tank_pipe = p.add_interaction(tank1, pipeline)
+index_pipe_tank = p.add_interaction(pipeline, tank2)
+
+pump.add_task('pump-task', PERIOD, DURATION, PUMP_RNG, outbuf=index_pump_tank[0]) 
+tank1.add_task('tank1-task', PERIOD, DURATION, TANK1_LVL, TANK1_VLV, inbuf=index_pump_tank[1], outbuf = index_tank_pipe[0])
+pipeline.add_task('pipeline-task', PERIOD, DURATION, FLOW_RATE, inbuf= index_tank_pipe[1], outbuf = index_pipe_tank[0])
+tank2.add_task('tank2-task', PERIOD, DURATION, TANK2_LVL, inbuf= index_pipe_tank[1])
+
+p.run()
 
 
-pump = Pump('pump',None, pump_tank1_q, STORE, 5, True)
-pump.start('pump', PERIOD, DURATION, PUMP_RNG)
-
-tank1 = Tank('tank1', pump_tank1_q, tank1_pipeline_q, STORE, 50, 30, 0, 10, True)
-tank1.start('tank1', PERIOD, DURATION, TANK1_LVL, TANK1_VLV)
-
-pipeline = Pipeline('pipeline', tank1_pipeline_q, pipeline_tank2_q, STORE, 0)
-pipeline.start('pipeline', PERIOD, DURATION, FLOW_RATE)
-
-tank2 = Tank('tank2', pipeline_tank2_q, None, STORE, 50, 30, 0, 10, False) 
-tank2.start('tank2', PERIOD, DURATION, TANK2_LVL)
-
-pump.wait_end()
-tank1.wait_end()
-pipeline.wait_end()
-tank2.wait_end()
-#reactor.run()
-
-#pump.stop()
-#tank1.stop()
-#pipeline.stop()
-#tank2.stop()
