@@ -103,16 +103,15 @@ class Component(object):
         '''
         return len(self.outbufs) > 0
 
-    def read_buffer(self, index ):
+    def read_buffer(self, index, default=None ):
         inbuf = self.inbufs[index]
-        print "getting item"
         if not inbuf.empty():
             item = inbuf.get()
             return item
+        return default
 
     def write_buffer(self, item, index):
         outbuf = self.outbufs[index]
-        print "putting item"
         if not outbuf.full():
             outbuf.put(item)
 
@@ -162,17 +161,16 @@ class Pump(Component):
             - Check if running from actuators
             - Change flow_out accordingly
         '''
-        var_running = args[0][0]
-        print args
-        print kwargs
+        var_running = args[0]
         index_out = kwargs.get(OUTBUF) 
-        if not index_out:
+        if index_out is None:
             logging.debug("No index provided for %s" % self.name)
             return 
         try:
             self.running = self.get(var_running, bool)
         except KeyError:
             self.set(var_running, self.running)    
+            logging.debug("%s : Setting variable %s to %s" %(self.name, var_running, self.running))
         if not self.running:
             self.flow_out = 0
         self.write_buffer(self.flow_out, index_out)
@@ -217,30 +215,32 @@ class Tank(Component):
                 Conservation of mass : flow_in - flow_out
             ''' 
             #FIXME check args
-            var_level = args[0][0]
-            print args
-            print kwargs
+            var_level = args[0]
+
             index_in = kwargs.get(INBUF)
             index_out = kwargs.get(OUTBUF)
-            if not index_in or not index_out:
+            if index_in is None and index_out is None:
                 logging.debug("No index provided %s" % self.name)
+                return
 
             var_valve = None 
             if self.valve:
-                var_valve = args[0][1]
+                var_valve = args[1]
 
             if var_valve:
                 try:
                     self.valve = self.get(var_valve,bool)
                 except KeyError:
                     self.set(var_valve, self.valve)
+                    logging.debug("%s: Setting %s to %s" % (self.name, var_valve, self.valve))
             
             if self.has_inbuf():
                 logging.debug("reading buffer %s" % self.name)
-                flow_in = self.read_buffer(index_in)
+                flow_in = self.read_buffer(index_in, 0)
             else:
                 flow_in = 0
             # FIXME Verify Formula of water level rise
+            
             self.level += (flow_in  / (math.pi * (self.diameter/2)**2))
             self.level = min(self.level, self.height) 
 
@@ -256,6 +256,7 @@ class Tank(Component):
                 self.write_buffer(flow_out, index_out)
 
             self.set(var_level, self.level)
+            logging.debug("%s : Setting %s to %s" %(self.name, var_level, self.level))
 
 class Valve(Component):
     def __init__(self, 
@@ -273,7 +274,7 @@ class Valve(Component):
             - check actuator from store
             - change status, open or not
         '''
-        var_opened = args[0][0]
+        var_opened = args[0]
         
         try :
             self.opened = self.get(var_opened, bool)
@@ -304,16 +305,19 @@ class Pipeline(Component):
             - compute out from in and diameter
             - compute flow rate 
         '''
-        var_flow_rate = args[0][0]
+        var_flow_rate = args[0]
 
         index_in = kwargs.get(INBUF)
         index_out = kwargs.get(OUTBUF)
-        if not index_in and not index_out:
+        
+        if index_in is None and index_out is None:
             logging.debug("no index provided %s" % self.name)
             return 
-        self.flow_rate = self.read_buffer(index_in)
+
+        self.flow_rate = self.read_buffer(index_in, self.flow_rate)
 
         self.set(var_flow_rate, self.flow_rate)
+        logging.debug("%s: Setting %s to %s" % (self.name, var_flow_rate, self.flow_rate))
         self.write_buffer(self.flow_rate, index_out)
 
 
