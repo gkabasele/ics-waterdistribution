@@ -1,18 +1,19 @@
 import sys
 import time
 import Queue
+import logging
 from utils import *
 from simplekv.fs import FilesystemStore
-from pymodbus.server.sync import ModbusTcpServer
+from pymodbus.server.sync import ModbusTcpServer, ModbusConnectedRequestHandler
 from pymodbus.device import ModbusDeviceIdentification
 from pymodbus.datastore import ModbusSequentialDataBlock
 from pymodbus.datastore import ModbusSlaveContext, ModbusServerContext
-from pymodbus.sync import ModbusConnectedRequestHandler
 from pymodbus.factory import ServerDecoder
 
 from twisted.internet.task import LoopingCall
 from twisted.internet import reactor
 
+logging.basicConfig(filename='lplc.log', level=logging.DEBUG, mode='w')
 
 class ProcessVariable(object):
 
@@ -22,14 +23,17 @@ class ProcessVariable(object):
         self.addr = addr
         self.size = size
 
-    def _type(self):
+    def get_type(self):
         return self._type
     
-    def addr(self):
+    def get_addr(self):
         return self.addr
 
-    def size(self):
+    def get_size(self):
         return self.size
+
+    def __str__(self):
+        return "(%s, %s, %s)" % (self._type, self.addr, self.size)
 
 
 class KVModbusRequestHandler(ModbusConnectedRequestHandler):
@@ -67,7 +71,7 @@ class KVModbusRequestHandler(ModbusConnectedRequestHandler):
             print "Variable %s doest not exist" % name
         
 
-class PLC(ModbusTCPServer):
+class PLC(ModbusTcpServer, object):
 
     def __init__(self, 
                  ip, 
@@ -80,11 +84,13 @@ class PLC(ModbusTCPServer):
                 **kwargs):
 
         self.store = FilesystemStore(store)
-        (identity, context) =  self._init_modbus(ip, port, discrete_input, coils, holding_reg, input_reg)
+        (context, identity) =  self._init_modbus(ip, port, discrete_input, coils, holding_reg, input_reg)
+        self.context = context
         self.variables = {}
         self.addr_to_var = {}
-        self.setting_address(kwargs)
         self.index = {HR : 0, DI: 0, IR: 0, CO: 0}
+        self.setting_address(kwargs)
+        self.loop = None
         super(PLC, self).__init__(context, identity=identity, address=(ip, port), handler = KVModbusRequestHandler)
 
 
@@ -92,7 +98,7 @@ class PLC(ModbusTCPServer):
         # { Name : type(di,hr, eg...), size: 10 }
         for k,v in var.iteritems():
             _type,size = v
-            addr = index[_type]
+            addr = self.index[_type]
             self.variables[k] = ProcessVariable(_type, addr, size)
             self.addr_to_var[addr] = k
             self.index[_type] += size
@@ -120,37 +126,48 @@ class PLC(ModbusTCPServer):
 
     def set(self, name, value):
         var = self.variables[name]
-        fx = registers_type[var.type()]
-        context[0x0].setValues(fx, var.addr(), [value])
+        fx = registers_type[var.get_type()]
+        self.context[0x0].setValues(fx, var.get_addr(), [value])
 
     def get(self, name):
         var = self.variables[name]
-        fx = registers_type[var.type()]
-        context[0x0].getValues(fx, var.addr(), count=var.size())[0]
-
+        fx = registers_type[var.get_type()]
+        return self.context[0x0].getValues(fx, var.get_addr(), count=var.get_size())
 
     def put_store(self, name, value):
         self.store.put(name, str(value))
 
 
-    def get_store(self, name, typeobj):
-        return typeobj(self.store.get(name))
+    def get_store(self, name, typeobj, default=None):
+        try:
+            item = typeobj(self.store.get(name))
+            logging.debug("Item: %s" % item)
+            return item
+        except KeyError:
+            item = default
+        except ValueError:
+            logging.debug("Item Error: %s " % self.store.get(name)) 
 
     def add_variable(self, name, _type, size):
         addr = self.index[_type]
         self.variable[name] = ProcessVariable(_type, addr, size)
         self.addr_to_var[addr] = name
 
+
     def update_registers(self, *args,**kwargs):
         for k,v in self.variables.iteritems():
-            if v._type() == CO:
-                val = int(self.get_store(name,bool))           
+            if v.get_type() == CO:
+                val = int(self.get_store(k,bool))           
             else:
-                val = self.get_store(name, float)
-            self.set(k,val)
+                val = self.get_store(k, float)
+            if val:
+                self.set(k,val)
 
-    def run(self, period, duration):
-        time = period
-        loop = LoopingCall(f=update_registers, address=(self.context,))
-        loop.start(time, now=False)
-        self.server.serve_forever()
+    def run(self, name, period, duration=None, *args, **kwargs):
+        self.loop = PeriodicTask(name, period, self.update_registers, duration, *args, **kwargs)
+        self.loop.start()
+
+    def wait_end(self, server=False):
+        if server:
+            self.serve_forever()
+        self.loop.join()

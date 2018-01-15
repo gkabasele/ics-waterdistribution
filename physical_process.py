@@ -86,5 +86,6 @@ class PhysicalProcess(object):
         for v in self.components.itervalues():
             v.start()
 
+    def wait_end(self):
         for v in self.components.itervalues():
             v.wait_end()

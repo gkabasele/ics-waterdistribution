@@ -2,6 +2,7 @@ import os
 import shutil
 import time
 from physical_process import  PhysicalProcess
+from plc import PLC
 from component import *
 from twisted.internet import reactor 
 
@@ -33,6 +34,7 @@ TANK2_LVL = "tank2_level"
 TANK1_VLV = "tank1_valve"
 FLOW_RATE = "flow_rate"
 
+
 p = PhysicalProcess(STORE)
 
 pump = p.add_component(Pump, 5, True)
@@ -55,6 +57,14 @@ tank1.add_task('tank1-task', PERIOD, DURATION, TANK1_LVL, TANK1_VLV, inbuf=index
 pipeline.add_task('pipeline-task', PERIOD, DURATION, FLOW_RATE, inbuf= index_tank_pipe[1], outbuf = index_pipe_tank[0])
 tank2.add_task('tank2-task', PERIOD, DURATION, TANK2_LVL, inbuf= index_pipe_tank[1])
 
+plc_tank = PLC('localhost', 5020, STORE, 1, 1, 1, 1, tank2_level = (HR,1)) 
+
 p.run()
+plc_tank.run('plc-tank2', PERIOD, DURATION)
+
+plc_tank.wait_end()
+p.wait_end()
+
+print plc_tank.get(TANK2_LVL)
 
 

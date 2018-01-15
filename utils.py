@@ -3,10 +3,15 @@ import sys
 import time
 import itertools
 
-HR = "hr"
-CO = "co"
-IR = "ir"
-DI = "di"
+HR = "h"
+CO = "c"
+IR = "i"
+DI = "d"
+
+D = 2
+I = 4
+H = 3
+C = 1
 
 GRAVITY = 9.8
 INBUF = "inbuf"
