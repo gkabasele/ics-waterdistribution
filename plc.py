@@ -161,8 +161,8 @@ class PLC(ModbusTcpServer, object):
         Export mapping between variable and their address
         '''
         f = open(filename, 'a')
-        for k,v in self.variables.iteritem():
-            f.write("%s,%s:%s:%s,%s,%s" % (self.ip, self.port , k, v.get_type(),v.get_addr(), v.get_size()))
+        for k,v in self.variables.iteritems():
+            f.write("%s,%s:%s:%s,%s,%s\n" % (self.ip, self.port , k, v.get_type(),v.get_addr(), v.get_size()))
         f.close()
         
 
@@ -217,6 +217,7 @@ class PLC(ModbusTcpServer, object):
             :param name: name of the task
             :param period: perform the task every period
             :param duration: duration of the task, the task is performed duration/period times
+            :return:
         '''
         self.loop = PeriodicTask(name, period, self.update_registers, duration, *args, **kwargs)
         self.loop.start()

@@ -16,9 +16,12 @@ from twisted.internet import reactor
 '''
 
 STORE = './variables'
-EXPORT_VAR = 'plc_var.ex'
+EXPORT_VAR = 'lplc_var.ex'
 PERIOD = 1
 DURATION = 60
+
+if os.path.exists(EXPORT_VAR):
+    os.remove(EXPORT_VAR)
 
 # Constant
 # tank
@@ -82,17 +85,20 @@ mtu.import_variables(EXPORT_VAR)
 mtu.add_cond(TANK1_LVL, 0, 30, mtu.close_valve, mtu.open_valve)
 mtu.add_cond(FLOW_RATE, 0, 20, mtu.close_valve, mtu.open_valve)
 mtu.add_cond(TANK2_LVL, 0, 30, mtu.open_valve, mtu.close_valve)
+mtu.create_task('mtu', PERIOD, DURATION)
+mtu.start()
 
 plc_pump.wait_end(True)
 plc_tank1.wait_end(True)
 plc_pipe.wait_end(True)
 plc_tank2.wait_end(True)
 p.wait_end()
+mtu.wait_end
 
-print plc_pump.get(PUMP_RNG)
-print plc_tank1.get(TANK1_LVL)
-print plc_tank1.get(TANK1_VLV)
-print plc_pipe.get(FLOW_RATE)
-print plc_tank2.get(TANK2_LVL)
+#print plc_pump.get(PUMP_RNG)
+#print plc_tank1.get(TANK1_LVL)
+#print plc_tank1.get(TANK1_VLV)
+#print plc_pipe.get(FLOW_RATE)
+#print plc_tank2.get(TANK2_LVL)
 
 

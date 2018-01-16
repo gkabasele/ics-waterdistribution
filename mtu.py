@@ -23,6 +23,15 @@ class ProcessRange(object):
     def add_action(self, fh, fl):
         self.action = f
 
+class ModbusTcpClientThread(threading.Thread):
+
+    def __init__(self, name, client):
+        threading.Thread.__init__(self)
+        self.name = name
+
+    def run(self):
+        pass
+
 class MTU(object):
 
     def __init__(self,
@@ -34,7 +43,7 @@ class MTU(object):
         self.variables = {}
         # Keeping track of PLC storing the variable, name : plc
         self.plcs = {}
-        # Keeping track of the 
+        # Keeping track of the condition for a variable
         self.cond = {}
 
         # (ip,port) to modbus client
@@ -55,10 +64,10 @@ class MTU(object):
             _type,addr,size = tuple(line.split(':')[2].split(','))
 
             if (ip,port) not in hist:
-                self.add_plc(ip, port, name, ProcessVariable(_type, addr, size))
+                self.add_plc(ip, port, name, ProcessVariable(_type, int(addr), int(size)))
                 hist.add((ip,port))
             else:
-                self.add_plc(ip, port, name, ProcessVariable(_type, addr,size), False)
+                self.add_plc(ip, port, name, ProcessVariable(_type, int(addr),int(size)), False)
         f.close()
              
 
@@ -66,8 +75,8 @@ class MTU(object):
 
         try:
             if create_client:
-                client = self.client_class(host=plc_ip, port=plc_port, source_address(self.ip, self.port))            
-                self.clients[(ip,port)] = client 
+                client = self.client_class(host=plc_ip, port=plc_port, source_address=(self.ip, self.port))            
+                self.clients[(plc_ip,plc_port)] = client 
                 self.port += 1
             else:
                 client = self.clients[(plc_ip, plc_port)]
@@ -87,25 +96,39 @@ class MTU(object):
     #TODO add other function
     def get_variable(self, name):
         var = self.variables[name]
-        res = None
-        if var.get_type() == CO :
-            res = self.plcs[name].read_coils(var.get_addr(),var.get_size())[0]  
-        elif var.get_type() == HR:
-            res = self.plcs[name].read_holding_registers(var.get_addr(), var.get_size())[0]
-        return res
+        try:
+            res = None
+            if var.get_type() == CO :
+                res = self.plcs[name].read_coils(var.get_addr(),var.get_size()).bits[0]  
+            elif var.get_type() == HR:
+                res = self.plcs[name].read_holding_registers(var.get_addr(), var.get_size()).registers[0]
+            elif var.get_type() == IR:
+                res = self.plcs[name].read_input_register(var.get_addr(), var.get_size()).registers[0]
+            elif var.get_type() == DI:
+                res = self.plcs[name].read_discrete_inputs(var.get_addr(), var.get_size()).bits[0]
+            return res
+        except ConnectionException:
+            print "Unable to read value %s from Modbus %s:%d" % (name)
 
     def write_variable(self, name, value):
         var = self.variables[name]
-        if var.get_type == CO : 
-            self.plcs[name].write_coil(var.get_addr(), value)
-        elif var.get_type() == HR:
-            self.plcs[name].write_register(var.get_addr(), value)
-        
+        try:
+            if var.get_type == CO : 
+                self.plcs[name].write_coil(var.get_addr(), value)
+            elif var.get_type() == HR:
+                self.plcs[name].write_register(var.get_addr(), value)
+        except ConnectionException:
+            print "Unable to write value %s from %s:%d" %(name)
+
     def start(self):
         self.task.start()
     
     def wait_end(self):
         self.task.join()
+
+    def close(self):
+        for v in self.clients.itervalues():
+            v.close()
 
     def main_loop(self, *args, **kwargs):
         raise NotImplementedError
@@ -121,16 +144,19 @@ class WaterDistribution(MTU):
 
 
     def main_loop(self, *args, **kwargs):
-        pump = self.get_variable(PUMP_RNG)
-        t1_lvl = self.get_variable(TANK1_LVL)
-        t1_vlv = self.get_variable(TANK1_VLV)
-        flow_rate = self.get_variable(FLOW_RATE)
-        t2_lvl = self.get_variable(TANK2_LVL)
-
+        pump = self.get_variable(self.PUMP_RNG)
         print "Pump: ", pump
+
+        t1_lvl = self.get_variable(self.TANK1_LVL)
         print "Level Tank1: ", t1_lvl
+
+        t1_vlv = self.get_variable(self.TANK1_VLV)
         print "Valve Tank1: ", t1_vlv
+
+        flow_rate = self.get_variable(self.FLOW_RATE)
         print "Flow rate: ", flow_rate
+
+        t2_lvl = self.get_variable(self.TANK2_LVL)
         print "Level Tank2: ", t2_lvl
 
         cond_t1 = self.cond[TANK1_LVL]
