@@ -66,7 +66,9 @@ class Component(object):
 
     def get_inbuf(self, index):
         '''Return one of the input buffer
+
            :param index: index of the requested buffer
+           :return: one of the input buffer
         '''
         return self.inbufs[index]
 
@@ -95,15 +97,26 @@ class Component(object):
 
     def has_inbuf(self):
         '''Has the component an input buffer
+        
+        :return: True if the component has en input buffer
         '''
         return len(self.inbufs) > 0
 
     def has_outbuf(self):
         '''Has the component an output buffer
+
+        :return: True if the component has an output buffer
         '''
         return len(self.outbufs) > 0
 
     def read_buffer(self, index, default=None ):
+        ''' Read item in the buffer at the given index
+        
+        :param index: The index of the buffer to get an item
+        :param default: default value if nothing can be read
+
+        :return: the item read from the buffer if possible, default otherwise
+        '''
         inbuf = self.inbufs[index]
         if not inbuf.empty():
             item = inbuf.get()
@@ -111,6 +124,12 @@ class Component(object):
         return default
 
     def write_buffer(self, item, index):
+        ''' Write item in the buffer at the given index
+
+        :param item: item to write in the buffer
+        :param index: The index of the buffer to write into
+
+        '''
         outbuf = self.outbufs[index]
         if not outbuf.full():
             outbuf.put(item)

@@ -77,10 +77,10 @@ class PLC(ModbusTcpServer, object):
                  ip, 
                 port,
                 store,
-                discrete_input,
-                coils,
-                holding_reg,
-                input_reg,
+                discrete_input=1,
+                coils=1,
+                holding_reg=1,
+                input_reg=1,
                 **kwargs):
 
         self.store = FilesystemStore(store)
@@ -91,6 +91,8 @@ class PLC(ModbusTcpServer, object):
         self.index = {HR : 0, DI: 0, IR: 0, CO: 0}
         self.setting_address(kwargs)
         self.loop = None
+        self.ip = ip
+        self.port = port
         super(PLC, self).__init__(context, identity=identity, address=(ip, port), handler = KVModbusRequestHandler)
 
 
@@ -125,36 +127,82 @@ class PLC(ModbusTcpServer, object):
 
 
     def set(self, name, value):
+        ''' Setting a process variable to the value
+
+            :param name: Name of the process variable
+            :param value: Value to set to the process variable 
+        '''
         var = self.variables[name]
         fx = registers_type[var.get_type()]
         self.context[0x0].setValues(fx, var.get_addr(), [value])
 
     def get(self, name):
+        ''' Getting value of a process variable
+        
+            :param name: Name of the process variable 
+
+            :return: Value of the process variable
+        '''
         var = self.variables[name]
         fx = registers_type[var.get_type()]
         return self.context[0x0].getValues(fx, var.get_addr(), count=var.get_size())
 
     def put_store(self, name, value):
+        ''' Setting value to one of the actuator
+            
+            :param name: name of the actuator
+            :param value: value to put to the actuator
+
+        '''
         self.store.put(name, str(value))
+
+    def export_variables(self, filename):
+        '''
+        Export mapping between variable and their address
+        '''
+        f = open(filename, 'a')
+        for k,v in self.variables.iteritem():
+            f.write("%s,%s:%s:%s,%s,%s" % (self.ip, self.port , k, v.get_type(),v.get_addr(), v.get_size()))
+        f.close()
+        
 
 
     def get_store(self, name, typeobj, default=None):
+        ''' Getting value from one of the sensor
+
+            :param name: name of the sensor
+            :param typeobj: type of the value to get
+
+            :return: value from the sensor if possible
+
+        '''
         try:
             item = typeobj(self.store.get(name))
             logging.debug("Item: %s" % item)
             return item
         except KeyError:
-            item = default
+            logging.debug("Item KeyError: %s " % name)
+            return default
         except ValueError:
             logging.debug("Item Error: %s " % self.store.get(name)) 
 
     def add_variable(self, name, _type, size):
+        ''' Add a process variable to the PLC
+            
+            :param name: name of the process variable
+            :param _type: type of store for the process variable (coil, input register, ...)
+            :param size: size needed to store the process variable
+
+        '''
         addr = self.index[_type]
         self.variable[name] = ProcessVariable(_type, addr, size)
         self.addr_to_var[addr] = name
 
 
     def update_registers(self, *args,**kwargs):
+        ''' Update variable according to the sensor
+            
+        '''
         for k,v in self.variables.iteritems():
             if v.get_type() == CO:
                 val = int(self.get_store(k,bool))           
@@ -164,6 +212,12 @@ class PLC(ModbusTcpServer, object):
                 self.set(k,val)
 
     def run(self, name, period, duration=None, *args, **kwargs):
+        ''' Start the processing of the PLC, in a periodic fashion
+
+            :param name: name of the task
+            :param period: perform the task every period
+            :param duration: duration of the task, the task is performed duration/period times
+        '''
         self.loop = PeriodicTask(name, period, self.update_registers, duration, *args, **kwargs)
         self.loop.start()
 
