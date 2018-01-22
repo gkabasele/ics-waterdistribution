@@ -26,7 +26,7 @@ FLOW_RATE = "flow_rate"
 
 # Store
 STORE = './variables'
-EXPORT_VAR = 'lplc_var.ex'
+EXPORT_VAR = 'lplc_var'
 PERIOD = 1
 DURATION = 60
 
@@ -36,12 +36,14 @@ registers_type = {DI:2, IR:4, HR:3, CO:1}
 
 class PeriodicTask(threading.Thread):
     # period in second
-    def __init__(self, name, period, task, duration=None,*args, **kwargs):
+    def __init__(self, name, period, task, duration=None,end=None, endargs=None,*args, **kwargs):
         threading.Thread.__init__(self)
         self.name = name
         self.period = period
         self.duration = duration 
         self.task = task
+        self.end = end
+        self.endargs = endargs
         self.args = args
         self.kwargs = kwargs
 
@@ -60,6 +62,12 @@ class PeriodicTask(threading.Thread):
                 break
             self.task(*self.args, **self.kwargs)
             time.sleep(next(g))
+
+        if self.end is not None:
+            if self.endargs is not None:
+                self.end(endargs)
+            else:
+                self.end()
 
     def run(self):
         self.do_every()

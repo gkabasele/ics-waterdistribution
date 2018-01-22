@@ -1,11 +1,12 @@
 import argparse
-from ..utils import * 
-from ..plc import *
+from utils import *
+from plc import *
 
 def main(args):
-    plc = PLC(args.ip, args.port, args.store, tank1_level = (HR,1) , tank1_valve = (CO,1))
-    plc.export_variables(EXPORT_VAR)
-    plc.run('plc-tank1', args.period, args.duration )
+    plc = PLC(args.ip, args.port, args.store, 'plc-pipe',flow_rate = (IR,1))
+    plc.export_variables(args.filename)
+    print "Starting PLC: Pipe"
+    plc.run('plc-pipe', args.period, args.duration)
     plc.wait_end(True)
 
 
@@ -16,7 +17,7 @@ if __name__ == "__main__":
     parser.add_argument("--store", dest="store", action="store")
     parser.add_argument("--period", dest="period", type=int, default=1, action="store")
     parser.add_argument("--duration", dest="duration", type=int, default=60, action="store")
-
+    parser.add_argument("--export", dest="filename", action="store")
     args = parser.parse_args()
     main(args)
 

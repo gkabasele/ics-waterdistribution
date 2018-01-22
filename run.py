@@ -2,14 +2,15 @@ import os
 import shutil
 import time
 import logging
-import utils
 import subprocess
 from physical_process import  PhysicalProcess
+from utils import *
 from plc import PLC
 from mtu import WaterDistribution
 from component import *
 from twisted.internet import reactor 
 from pymodbus.server.sync import ModbusConnectedRequestHandler
+
 
 if os.path.exists(LOG):
     os.remove(LOG)
@@ -25,8 +26,9 @@ logging.basicConfig(filename = "ics.log", mode= 'w', format='[%(levelname)s][%(p
 
 
 if os.path.exists(EXPORT_VAR):
-    os.remove(EXPORT_VAR)
+    shutil.rmtree(EXPORT_VAR)
 
+os.mkdir(EXPORT_VAR)
 
 # Constant
 # tank
@@ -62,39 +64,43 @@ tank1.add_task('tank1-task', PERIOD, DURATION, TANK1_LVL, TANK1_VLV, inbuf=index
 pipeline.add_task('pipeline-task', PERIOD, DURATION, FLOW_RATE, inbuf= index_tank_pipe[1], outbuf = index_pipe_tank[0])
 tank2.add_task('tank2-task', PERIOD, DURATION, TANK2_LVL, inbuf= index_pipe_tank[1])
 
-plc_pump = PLC('localhost', 5021, STORE, 'plc-pump',pump_running = (CO,1))
-plc_tank1 = PLC('localhost', 5022, STORE, 'plc-tank1' ,tank1_level = (HR,1), tank1_valve = (CO,1))
-plc_pipe = PLC('localhost', 5023, STORE, 'plc-pipe',flow_rate = (IR,1))
-plc_tank2 = PLC('localhost', 5020, STORE, 'plc-tank2',tank2_level = (HR,1)) 
-
 
 p.run()
 
 # run PLC
+py = "python"
+ip = "localhost"
+ip_args = "--ip"
+port_args = "--port"
+store_args = "--store"
+prefix = "script_plc_"
+ex = "--export"
 
 
+pump_proc = subprocess.Popen([py, prefix+"pump.py", ip_args, ip, port_args, str(5020), store_args, STORE, ex, EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+tank1_proc = subprocess.Popen([py, prefix+"tank1.py", ip_args, ip, port_args, str(5021), store_args, STORE, ex, EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+pipe_proc = subprocess.Popen([py, prefix+"pipe.py", ip_args, ip, port_args, str(5022), store_args, STORE, ex, EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+tank2_proc = subprocess.Popen([py, prefix+"tank2.py", ip_args, ip, port_args, str(5023), store_args, STORE, ex, EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 # run MTU
+mtu_proc = subprocess.Popen([py, "script_mtu.py", ip_args, ip, port_args, str(3000), "--import", EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
+#print pump_proc.communicate()
+#print tank1_proc.communicate()
+#print pipe_proc.communicate()
+#print tank2_proc.communicate()
+#print mtu_proc.communicate()
+
+pump_proc.wait()
+tank1_proc.wait()
+pipe_proc.wait()
+tank2_proc.wait()
+mtu_proc.wait()
 p.wait_end()
-plc_pump.run('plc-pump', PERIOD, DURATION)
-plc_tank1.run('plc-tank1', PERIOD, DURATION)
-plc_pipe.run('plc-pipe', PERIOD, DURATION)
-plc_tank2.run('plc-tank2', PERIOD, DURATION)
 
-mtu = WaterDistribution('localhost', 3000)
-mtu.import_variables(EXPORT_VAR)
-
-plc_pump.wait_end(True)
-plc_tank1.wait_end(True)
-plc_pipe.wait_end(True)
-plc_tank2.wait_end(True)
-p.wait_end()
-mtu.wait_end
-
-print plc_pump.get(PUMP_RNG)
-print plc_tank1.get(TANK1_LVL)
-print plc_tank1.get(TANK1_VLV)
-print plc_pipe.get(FLOW_RATE)
-print plc_tank2.get(TANK2_LVL)
+#print plc_pump.get(PUMP_RNG)
+#print plc_tank1.get(TANK1_LVL)
+#print plc_tank1.get(TANK1_VLV)
+#print plc_pipe.get(FLOW_RATE)
+#print plc_tank2.get(TANK2_LVL)
 
 

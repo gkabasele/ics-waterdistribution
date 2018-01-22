@@ -1,5 +1,6 @@
 import logging
 import math
+import os
 from pymodbus.client.sync import ModbusTcpClient
 from pymodbus.client.sync import ConnectionException
 from pymodbus.exceptions import ModbusIOException
@@ -55,6 +56,11 @@ class MTU(object):
         self.port = port
         self.client_class = client
         self.task = None
+
+    def get_dir(self, dirname):
+        for filename in os.listdir(dirname):
+            self.import_variables(filename)
+
 
     def import_variables(self, filename):
         hist = set()

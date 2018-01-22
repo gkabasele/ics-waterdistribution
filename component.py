@@ -140,8 +140,10 @@ class Component(object):
             :param name: name of the task
             :param period: period of the task
             :param duration: duration of the task, if None, does not stop
+
+            :return:
         '''
-        self.tasks[name] = PeriodicTask(name, period, self.computation, duration, *args, **kwargs) 
+        self.tasks[name] = PeriodicTask(name, period, self.computation, duration, None, None, *args, **kwargs) 
 
 
     def start(self):
