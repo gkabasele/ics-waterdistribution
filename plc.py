@@ -13,7 +13,7 @@ from pymodbus.factory import ServerDecoder
 from twisted.internet.task import LoopingCall
 from twisted.internet import reactor
 
-logging.basicConfig(filename='lplc.log', level=logging.DEBUG, mode='w')
+logger = logging.getLogger(__name__)
 
 class ProcessVariable(object):
 
@@ -46,18 +46,19 @@ class KVModbusRequestHandler(ModbusConnectedRequestHandler):
         try:
             context = self.server.context[request.unit_id]
             response = request.execute(context)
+            logger.debug("Received request")
             # updating actuator 
             #check if its a write request
             if utils.first_true(ServerDecoder._function_table[4,7], None, lambda x: isinstance(x,request)):  
                 self.update_actuator(request.address, request.value)
 
         except NoSuchSlaveException as ex:
-            _logger.debug("requested slave does not exist: %s" % request.unit_id )
+            logger.debug("requested slave does not exist: %s" % request.unit_id )
             if self.server.ignore_missing_slaves:
                 return
             response = request.doException(merror.GatewayNoResponse)
         except Exception as Ex:
-            _logger.debug("Datastore unable to fulfill request: %s; %s", ex, traceback.format_exc())
+            logger.debug("Datastore unable to fulfill request: %s; %s", ex, traceback.format_exc())
             response = request.doException(merror.SlaveFailure)
         response.transaction_id = request.transaction_id
         response.unit_id = request.unit_id
@@ -77,10 +78,12 @@ class PLC(ModbusTcpServer, object):
                  ip, 
                 port,
                 store,
+                name,
                 discrete_input=1,
                 coils=1,
                 holding_reg=1,
                 input_reg=1,
+                handler = KVModbusRequestHandler,
                 **kwargs):
 
         self.store = FilesystemStore(store)
@@ -93,7 +96,9 @@ class PLC(ModbusTcpServer, object):
         self.loop = None
         self.ip = ip
         self.port = port
-        super(PLC, self).__init__(context, identity=identity, address=(ip, port), handler = KVModbusRequestHandler)
+        self.name = name
+        logger.info("Creating a PLC server %s:%d" % (ip,port))
+        super(PLC, self).__init__(context, identity=identity, address=(ip, port), handler = handler)
 
 
     def setting_address(self, var):
@@ -174,17 +179,15 @@ class PLC(ModbusTcpServer, object):
             :param typeobj: type of the value to get
 
             :return: value from the sensor if possible
-
         '''
         try:
             item = typeobj(self.store.get(name))
-            logging.debug("Item: %s" % item)
             return item
         except KeyError:
-            logging.debug("Item KeyError: %s " % name)
+            logger.error("Item KeyError: %s " % name)
             return default
         except ValueError:
-            logging.debug("Item Error: %s " % self.store.get(name)) 
+            logger.error("Item Error: %s " % self.store.get(name)) 
 
     def add_variable(self, name, _type, size):
         ''' Add a process variable to the PLC
@@ -193,6 +196,7 @@ class PLC(ModbusTcpServer, object):
             :param _type: type of store for the process variable (coil, input register, ...)
             :param size: size needed to store the process variable
 
+            :return:
         '''
         addr = self.index[_type]
         self.variable[name] = ProcessVariable(_type, addr, size)
@@ -201,7 +205,7 @@ class PLC(ModbusTcpServer, object):
 
     def update_registers(self, *args,**kwargs):
         ''' Update variable according to the sensor
-            
+            :return:    
         '''
         for k,v in self.variables.iteritems():
             if v.get_type() == CO:
@@ -226,3 +230,7 @@ class PLC(ModbusTcpServer, object):
         if server:
             self.serve_forever()
         self.loop.join()
+
+    def stop(self):
+        self.shutdown()
+

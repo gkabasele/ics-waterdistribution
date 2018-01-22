@@ -17,6 +17,21 @@ GRAVITY = 9.8
 INBUF = "inbuf"
 OUTBUF = "outbuf"
 
+# Variable Name
+PUMP_RNG = "pump_running"
+TANK1_LVL = "tank1_level"
+TANK2_LVL = "tank2_level"
+TANK1_VLV = "tank1_valve"
+FLOW_RATE = "flow_rate"
+
+# Store
+STORE = './variables'
+EXPORT_VAR = 'lplc_var.ex'
+PERIOD = 1
+DURATION = 60
+
+LOG = "ics.log"
+
 registers_type = {DI:2, IR:4, HR:3, CO:1}
 
 class PeriodicTask(threading.Thread):

@@ -10,7 +10,7 @@ from twisted.internet.task import LoopingCall
 from twisted.internet import reactor
 from utils import *
 
-logging.basicConfig(filename='lphys.log', level=logging.DEBUG, mode= 'w')
+logger = logging.getLogger(__name__)
 
 
 class ComponentQueue(Queue.Queue, object):
@@ -152,7 +152,7 @@ class Component(object):
             s+= "\t%s\n" % k
             v.start()
 
-        logging.info(s)
+        logger.info(s)
 
     def wait_end(self):    
         for v in self.tasks.itervalues():
@@ -183,13 +183,13 @@ class Pump(Component):
         var_running = args[0]
         index_out = kwargs.get(OUTBUF) 
         if index_out is None:
-            logging.debug("No index provided for %s" % self.name)
+            logger.error("No index provided for %s" % self.name)
             return 
         try:
             self.running = self.get(var_running, bool)
         except KeyError:
             self.set(var_running, self.running)    
-            logging.debug("%s : Setting variable %s to %s" %(self.name, var_running, self.running))
+            logger.error("%s : Setting variable %s to %s" %(self.name, var_running, self.running))
         if not self.running:
             self.flow_out = 0
         self.write_buffer(self.flow_out, index_out)
@@ -239,7 +239,7 @@ class Tank(Component):
             index_in = kwargs.get(INBUF)
             index_out = kwargs.get(OUTBUF)
             if index_in is None and index_out is None:
-                logging.debug("No index provided %s" % self.name)
+                logger.error("No index provided %s" % self.name)
                 return
 
             var_valve = None 
@@ -251,10 +251,8 @@ class Tank(Component):
                     self.valve = self.get(var_valve,bool)
                 except KeyError:
                     self.set(var_valve, self.valve)
-                    logging.debug("%s: Setting %s to %s" % (self.name, var_valve, self.valve))
             
             if self.has_inbuf():
-                logging.debug("reading buffer %s" % self.name)
                 flow_in = self.read_buffer(index_in, 0)
             else:
                 flow_in = 0
@@ -275,7 +273,6 @@ class Tank(Component):
                 self.write_buffer(flow_out, index_out)
 
             self.set(var_level, self.level)
-            logging.debug("%s : Setting %s to %s" %(self.name, var_level, self.level))
 
 class Valve(Component):
     def __init__(self, 
@@ -330,13 +327,12 @@ class Pipeline(Component):
         index_out = kwargs.get(OUTBUF)
         
         if index_in is None and index_out is None:
-            logging.debug("no index provided %s" % self.name)
+            logger.error("no index provided %s" % self.name)
             return 
 
         self.flow_rate = self.read_buffer(index_in, self.flow_rate)
 
         self.set(var_flow_rate, self.flow_rate)
-        logging.debug("%s: Setting %s to %s" % (self.name, var_flow_rate, self.flow_rate))
         self.write_buffer(self.flow_rate, index_out)
 
 

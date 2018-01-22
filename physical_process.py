@@ -1,8 +1,10 @@
 import os
 import shutil
+import logging
 from utils import CustomDict
 from component import *
 
+logger = logging.getLogger(__name__)
 
 class PhysicalProcess(object):
 
