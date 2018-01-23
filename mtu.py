@@ -18,10 +18,10 @@ class ProcessRange(object):
             self.action = (fh,fl)
 
     def execute_action(self, value, *args, **kwargs):
-        if value < low:
-            self.action[1](args, kwargs)
-        elif value > high:
-            self.action[0](args, kwargs)
+        if value < self.low:
+            self.action[1](*args, **kwargs)
+        elif value > self.high:
+            self.action[0](*args, **kwargs)
 
     def add_action(self, fh, fl):
         self.action = f
@@ -179,22 +179,21 @@ class WaterDistribution(MTU):
 
         t2_lvl = self.get_variable(self.TANK2_LVL)
         print "Level Tank2: ", t2_lvl
-        print "\n"
 
         if t1_lvl is not None:
             cond_t1 = self.cond[self.TANK1_LVL]
-            cond_t1.execute_action()
+            cond_t1.execute_action(t1_lvl)
         if flow_rate is not None:
             cond_flow_rate = self.cond[self.FLOW_RATE]
-            cond_flow_rate.execute_action()
+            cond_flow_rate.execute_action(flow_rate)
         if t2_lvl is not None:
             cond_t2 = self.cond[self.TANK2_LVL]
-            cond_t2.execute_action()
+            cond_t2.execute_action(t2_lvl)
 
-    def close_valve(self):
+    def close_valve(self, *args, **kwargs):
         self.write_variable(TANK1_VLV, False)
 
-    def open_valve(self):
+    def open_valve(self, *args, **kwargs):
         self.write_variable(TANK1_LVL, True)
 
 

@@ -44,12 +44,14 @@ class KVModbusRequestHandler(ModbusConnectedRequestHandler):
         :param request: the decoded request message
         '''
         try:
+            logger.debug("Received request")
             context = self.server.context[request.unit_id]
             response = request.execute(context)
-            logger.debug("Received request")
             # updating actuator 
             #check if its a write request
-            if utils.first_true(ServerDecoder._function_table[4,7], None, lambda x: isinstance(x,request)):  
+            #if utils.first_true(ServerDecoder._function_table[4,7], None, lambda x: isinstance(x,request)):  
+            #if next(( x for x in ServerDecoder._function_table[4,7] if isinstance(x,request)), None) is not None:
+            if request.function_code in [5,6,15,16]:
                 self.update_actuator(request.address, request.value)
 
         except NoSuchSlaveException as ex:
@@ -60,8 +62,10 @@ class KVModbusRequestHandler(ModbusConnectedRequestHandler):
         except Exception as Ex:
             logger.debug("Datastore unable to fulfill request: %s; %s", ex, traceback.format_exc())
             response = request.doException(merror.SlaveFailure)
+
         response.transaction_id = request.transaction_id
         response.unit_id = request.unit_id
+        print "Sending Request"
         self.send(response)
 
     def update_actuator(self, addr, value):

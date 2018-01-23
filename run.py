@@ -84,11 +84,14 @@ tank2_proc = subprocess.Popen([py, prefix+"tank2.py", ip_args, ip, port_args, st
 # run MTU
 mtu_proc = subprocess.Popen([py, "script_mtu.py", ip_args, ip, port_args, str(3000), "--import", EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-print pump_proc.communicate()
-print tank1_proc.communicate()
-print pipe_proc.communicate()
-print tank2_proc.communicate()
-print mtu_proc.communicate()
+(pump_out, pump_err) = pump_proc.communicate()
+#print tank1_proc.communicate()
+#print pipe_proc.communicate()
+#print tank2_proc.communicate()
+(mtu_out, mtu_err) = mtu_proc.communicate()
+
+print pump_out
+print mtu_out
 
 pump_proc.wait()
 tank1_proc.wait()
