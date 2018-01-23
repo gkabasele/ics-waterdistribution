@@ -4,8 +4,7 @@ from plc import *
 
 def main(args):
     plc = PLC(args.ip, args.port, args.store, "plc-tank2",tank2_level = (HR,1))
-    plc.export_variables(args.filename)
-    print "Starting PLC: TANK2"
+    #plc.export_variables(args.filename)
     plc.run('plc-tank2', args.period, args.duration)
     plc.wait_end(True)
 

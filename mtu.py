@@ -59,7 +59,7 @@ class MTU(object):
 
     def get_dir(self, dirname):
         for filename in os.listdir(dirname):
-            self.import_variables(filename)
+            self.import_variables(dirname+"/"+filename)
 
 
     def import_variables(self, filename):
@@ -67,15 +67,16 @@ class MTU(object):
         f = open(filename, 'r')
         for line in f:
             l = line.split(':')
-            ip, port = tuple(l[0].split(','))
+            ip, sport = tuple(l[0].split(','))
+            port = int(sport)
             name = l[1] 
             _type,addr,size = tuple(line.split(':')[2].split(','))
 
             if (ip,port) not in hist:
-                self.add_plc(ip, int(port), name, ProcessVariable(_type, int(addr), int(size)))
+                self.add_plc(ip, port, name, ProcessVariable(_type, int(addr), int(size)))
                 hist.add((ip,port))
             else:
-                self.add_plc(ip, int(port), name, ProcessVariable(_type, int(addr),int(size)), False)
+                self.add_plc(ip, port, name, ProcessVariable(_type, int(addr),int(size)), False)
         f.close()
              
 
@@ -109,19 +110,24 @@ class MTU(object):
         var = self.variables[name]
         try:
             res = None
-            if var.get_type() == CO :
+            type_ = var.get_type()
+            if type_ == CO :
                 res = self.plcs[name].read_coils(var.get_addr(),var.get_size()).bits[0]  
-            elif var.get_type() == HR:
+            elif type_ == HR:
                 res = self.plcs[name].read_holding_registers(var.get_addr(), var.get_size()).registers[0]
-            elif var.get_type() == IR:
+            elif type_ == IR:
                 res = self.plcs[name].read_input_registers(var.get_addr(), var.get_size()).registers[0]
-            elif var.get_type() == DI:
+            elif type_ == DI:
                 res = self.plcs[name].read_discrete_inputs(var.get_addr(), var.get_size()).bits[0]
+
             return res
+
         except ConnectionException:
             logger.error("Unable to read value %s from Modbus" % (name))
-        except ModbusIOException:
-            logger.error("ModbusIOException: %s " % name )
+        except AttributeError:
+            if type(res) is ModbusIOException:
+                logger.error("ModbusIOException: %s " % name )
+                print res.message
 
     def write_variable(self, name, value):
         var = self.variables[name]

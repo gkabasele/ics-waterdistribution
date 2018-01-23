@@ -4,8 +4,7 @@ from plc import *
 
 def main(args):
     plc = PLC(args.ip, args.port, args.store, 'plc-pipe',flow_rate = (IR,1))
-    plc.export_variables(args.filename)
-    print "Starting PLC: Pipe"
+    #plc.export_variables(args.filename)
     plc.run('plc-pipe', args.period, args.duration)
     plc.wait_end(True)
 

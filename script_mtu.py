@@ -2,6 +2,7 @@ import argparse
 from utils import *
 from mtu import *
 
+
 def main(args):
     mtu =  WaterDistribution(args.ip, args.port)
     mtu.get_dir(args.filename)
@@ -9,7 +10,6 @@ def main(args):
     mtu.add_cond(FLOW_RATE, 0, 20, mtu.close_valve, mtu.open_valve)
     mtu.add_cond(TANK2_LVL, 0, 30, mtu.open_valve, mtu.close_valve)
     mtu.create_task('mtu', args.period, args.duration)
-    print "Starting MTU"
     mtu.start()
     mtu.wait_end()
 

@@ -25,10 +25,10 @@ logging.basicConfig(filename = "ics.log", mode= 'w', format='[%(levelname)s][%(p
 '''
 
 
-if os.path.exists(EXPORT_VAR):
-    shutil.rmtree(EXPORT_VAR)
-
-os.mkdir(EXPORT_VAR)
+#if os.path.exists(EXPORT_VAR):
+#    shutil.rmtree(EXPORT_VAR)
+#
+#os.mkdir(EXPORT_VAR)
 
 # Constant
 # tank
@@ -84,11 +84,11 @@ tank2_proc = subprocess.Popen([py, prefix+"tank2.py", ip_args, ip, port_args, st
 # run MTU
 mtu_proc = subprocess.Popen([py, "script_mtu.py", ip_args, ip, port_args, str(3000), "--import", EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-#print pump_proc.communicate()
-#print tank1_proc.communicate()
-#print pipe_proc.communicate()
-#print tank2_proc.communicate()
-#print mtu_proc.communicate()
+print pump_proc.communicate()
+print tank1_proc.communicate()
+print pipe_proc.communicate()
+print tank2_proc.communicate()
+print mtu_proc.communicate()
 
 pump_proc.wait()
 tank1_proc.wait()

@@ -5,8 +5,7 @@ from plc import *
 
 def main(args):
     plc = PLC(args.ip, args.port, args.store, "plc-pump",pump_running = (CO,1))
-    plc.export_variables(args.filename)
-    print "Starting PLC: Pump"
+    #plc.export_variables(args.filename)
     plc.run('plc-pump', args.period, args.duration)
     plc.wait_end(True)
 
