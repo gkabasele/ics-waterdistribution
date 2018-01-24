@@ -54,6 +54,9 @@ class Component(object):
            :param name: name of the process variable
            :param typeobj: type of the process variable
         '''
+        if typeobj == "b":
+            val = self.store.get(name)
+            return val == "True"
         return typeobj(self.store.get(name))
 
     def set(self, name, value):
@@ -188,7 +191,7 @@ class Pump(Component):
             logger.error("No index provided for %s" % self.name)
             return 
         try:
-            self.running = self.get(var_running, bool)
+            self.running = self.get(var_running, 'b')
         except KeyError:
             self.set(var_running, self.running)    
             logger.error("%s : Setting variable %s to %s" %(self.name, var_running, self.running))
@@ -244,15 +247,19 @@ class Tank(Component):
                 logger.error("No index provided %s" % self.name)
                 return
 
+            # Name of the variable not the value
             var_valve = None 
-            if self.valve:
+            if len(args) > 1:
                 var_valve = args[1]
-
             if var_valve:
                 try:
-                    self.valve = self.get(var_valve,bool)
+                    logger.debug("%s: valve state %s" % (self.name, self.valve))
+                    self.valve = self.get(var_valve,'b')
+                    logger.debug("%s: changing valve to %s" % (self.name, self.valve))
                 except KeyError:
                     self.set(var_valve, self.valve)
+                    logger.debug("%s: changing valve to %s" % (self.name, self.valve))
+
             
             if self.has_inbuf():
                 flow_in = self.read_buffer(index_in, 0)
@@ -260,6 +267,7 @@ class Tank(Component):
                 flow_in = 0
             # FIXME Verify Formula of water level rise
             
+            in_ = flow_in/(math.pi * (self.diameter/2)**2)
             self.level += (flow_in  / (math.pi * (self.diameter/2)**2))
             self.level = min(self.level, self.height) 
 
@@ -268,6 +276,7 @@ class Tank(Component):
             else: 
                 flow_out = 0
 
+            out = flow_out/(math.pi * (self.diameter/2)**2) 
             self.level -= (flow_out /(math.pi * (self.diameter/2)**2)) 
             self.level = max(self.level, 0)
 
@@ -295,7 +304,7 @@ class Valve(Component):
         var_opened = args[0]
         
         try :
-            self.opened = self.get(var_opened, bool)
+            self.opened = self.get(var_opened, 'b')
         except KeyError:
             self.set(var_opened, self.opened)
 

@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class ProcessRange(object):
 
-    def __init__(self, low, high, fh=None, fl=None):
+    def __init__(self, low, high, fl=None, fh=None):
         self.high = high
         self.low = low
         if fh is not None and fl is not None:
@@ -99,8 +99,8 @@ class MTU(object):
         except ConnectionException:
             logger.error("Unable to connect to Modbus server %s:%d" % (plc_ip, plc_port))
 
-    def add_cond(self, name, high, low, fh=None, fl=None):
-        self.cond[name] = ProcessRange(high, low, fh, fl)
+    def add_cond(self, name, low, high, fl=None, fh=None):
+        self.cond[name] = ProcessRange(low, high, fl, fh)
 
     def create_task(self, name, period, duration=None, *args, **kwargs):
         self.task = PeriodicTask(name, period, self.main_loop, duration, *args, **kwargs) 
@@ -193,6 +193,7 @@ class WaterDistribution(MTU):
             cond_t2.execute_action(self.t2_lvl)
 
     def close_valve(self, *args, **kwargs):
+        print "Closing valve"
         if self.t1_vlv:
             self.write_variable(TANK1_VLV, False)
 

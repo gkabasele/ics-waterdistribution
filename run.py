@@ -15,7 +15,7 @@ from pymodbus.server.sync import ModbusConnectedRequestHandler
 if os.path.exists(LOG):
     os.remove(LOG)
 
-logging.basicConfig(filename = "ics.log", mode= 'w', format='[%(levelname)s][%(pathname)s-%(lineno)d] %(message)s', level= logging.DEBUG)
+logging.basicConfig(filename = "ics.log", mode= 'w', format='[%(asctime)s][%(levelname)s][%(pathname)s-%(lineno)d] %(message)s', level= logging.DEBUG)
 
 '''
 +-----------+ +------+ +----------------+ +---------+
@@ -45,7 +45,7 @@ p_length = 40
 p = PhysicalProcess(STORE)
 
 pump = p.add_component(Pump, 5, True)
-tank1 = p.add_component(Tank, t_height, t_diameter, t_hole, valve=True, name='tank1' )
+tank1 = p.add_component(Tank, t_height, t_diameter, t_hole, valve=False, name='tank1' )
 tank2 = p.add_component(Tank, t_height, t_diameter, t_hole, valve=False, name='tank2')
 pipeline = p.add_component(Pipeline, p_length, p_diameter)
 
@@ -84,17 +84,17 @@ tank2_proc = subprocess.Popen([py, prefix+"tank2.py", ip_args, ip, port_args, st
 # run MTU
 mtu_proc = subprocess.Popen([py, "script_mtu.py", ip_args, ip, port_args, str(3000), "--import", EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-(pump_out, pump_err) = pump_proc.communicate()
+#(pump_out, pump_err) = pump_proc.communicate()
 (tank1_out, tank1_err) = tank1_proc.communicate()
-(pipe_out, pipe_err) = pipe_proc.communicate()
-(tank2_out, tank2_err) = tank2_proc.communicate()
+#(pipe_out, pipe_err) = pipe_proc.communicate()
+#(tank2_out, tank2_err) = tank2_proc.communicate()
 (mtu_out, mtu_err) = mtu_proc.communicate()
 
-print pump_out
+#print pump_out
 print tank1_out
 print tank1_err
-print pipe_out
-print tank2_out
+#print pipe_out
+#print tank2_out
 print mtu_out
 
 pump_proc.wait()

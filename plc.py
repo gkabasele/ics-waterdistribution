@@ -49,8 +49,6 @@ class KVModbusRequestHandler(ModbusConnectedRequestHandler):
             response = request.execute(context)
             # updating actuator 
             #check if its a write request
-            #if utils.first_true(ServerDecoder._function_table[4,7], None, lambda x: isinstance(x,request)):  
-            #if next(( x for x in ServerDecoder._function_table[4,7] if isinstance(x,request)), None) is not None:
             if request.function_code in [5,6,15,16]:
                 print "Updating actuator"
                 self.update_actuator(request.address, request.value)
@@ -185,8 +183,12 @@ class PLC(ModbusTcpServer, object):
             :return: value from the sensor if possible
         '''
         try:
-            item = typeobj(self.store.get(name))
-            return item
+            if typeobj == "b":
+                item = self.store.get(name)
+                return item == "True"
+            else:
+                item = typeobj(self.store.get(name))
+                return item
         except KeyError:
             logger.error("Item KeyError: %s " % name)
             return default
@@ -213,7 +215,7 @@ class PLC(ModbusTcpServer, object):
         '''
         for k,v in self.variables.iteritems():
             if v.get_type() == CO:
-                val = int(self.get_store(k,bool))           
+                val = int(self.get_store(k,'b'))           
             else:
                 val = self.get_store(k, float, 0)
             if val is not None:
