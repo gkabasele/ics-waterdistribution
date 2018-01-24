@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class ProcessRange(object):
 
-    def __init__(self, high, low, fh=None, fl=None):
+    def __init__(self, low, high, fh=None, fl=None):
         self.high = high
         self.low = low
         if fh is not None and fl is not None:
@@ -155,45 +155,49 @@ class MTU(object):
 
 class WaterDistribution(MTU):
 
-    # FIXME put all in a list
-    PUMP_RNG = "pump_running"
-    TANK1_LVL = "tank1_level"
-    TANK1_VLV = "tank1_valve"
-    FLOW_RATE = "flow_rate"
-    TANK2_LVL = "tank2_level"
+    def __init__(self, ip, port, client=ModbusTcpClient):
+        
+        self.pump = False
+        self.t1_lvl = 0
+        self.t1_vlv = False
+        self.pipeline = 0
+        self.t2_lvl = 0
+        super(WaterDistribution, self).__init__(ip, port, client)
 
 
     def main_loop(self, *args, **kwargs):
 
-        pump = self.get_variable(self.PUMP_RNG)
-        print "Pump: ", pump
+        self.pump = self.get_variable(PUMP_RNG)
+        print "Pump: ", self.pump
 
-        t1_lvl = self.get_variable(self.TANK1_LVL)
-        print "Level Tank1: ", t1_lvl
+        self.t1_lvl = self.get_variable(TANK1_LVL)
+        print "Level Tank1: ", self.t1_lvl
 
-        t1_vlv = self.get_variable(self.TANK1_VLV)
-        print "Valve Tank1: ", t1_vlv
+        self.t1_vlv = self.get_variable(TANK1_VLV)
+        print "Valve Tank1: ", self.t1_vlv
         
-        flow_rate = self.get_variable(self.FLOW_RATE)
-        print "Flow rate: ", flow_rate
+        self.flow_rate = self.get_variable(FLOW_RATE)
+        print "Flow rate: ", self.flow_rate
 
-        t2_lvl = self.get_variable(self.TANK2_LVL)
-        print "Level Tank2: ", t2_lvl
+        self.t2_lvl = self.get_variable(TANK2_LVL)
+        print "Level Tank2: ", self.t2_lvl
 
-        if t1_lvl is not None:
-            cond_t1 = self.cond[self.TANK1_LVL]
-            cond_t1.execute_action(t1_lvl)
-        if flow_rate is not None:
-            cond_flow_rate = self.cond[self.FLOW_RATE]
-            cond_flow_rate.execute_action(flow_rate)
-        if t2_lvl is not None:
-            cond_t2 = self.cond[self.TANK2_LVL]
-            cond_t2.execute_action(t2_lvl)
+        if self.t1_lvl is not None:
+            cond_t1 = self.cond[TANK1_LVL]
+            cond_t1.execute_action(self.t1_lvl)
+        if self.flow_rate is not None:
+            cond_flow_rate = self.cond[FLOW_RATE]
+            cond_flow_rate.execute_action(self.flow_rate)
+        if self.t2_lvl is not None:
+            cond_t2 = self.cond[TANK2_LVL]
+            cond_t2.execute_action(self.t2_lvl)
 
     def close_valve(self, *args, **kwargs):
-        self.write_variable(TANK1_VLV, False)
+        if self.t1_vlv:
+            self.write_variable(TANK1_VLV, False)
 
     def open_valve(self, *args, **kwargs):
-        self.write_variable(TANK1_LVL, True)
+        if self.t1_vlv:
+            self.write_variable(TANK1_VLV, True)
 
 

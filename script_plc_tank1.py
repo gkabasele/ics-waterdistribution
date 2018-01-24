@@ -7,7 +7,7 @@ def main(args):
     #plc.export_variables(args.filename)
     plc.run('plc-tank1', args.period, args.duration )
     plc.wait_end(True)
-
+    
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

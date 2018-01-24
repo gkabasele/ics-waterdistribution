@@ -52,6 +52,7 @@ class KVModbusRequestHandler(ModbusConnectedRequestHandler):
             #if utils.first_true(ServerDecoder._function_table[4,7], None, lambda x: isinstance(x,request)):  
             #if next(( x for x in ServerDecoder._function_table[4,7] if isinstance(x,request)), None) is not None:
             if request.function_code in [5,6,15,16]:
+                print "Updating actuator"
                 self.update_actuator(request.address, request.value)
 
         except NoSuchSlaveException as ex:
@@ -65,7 +66,6 @@ class KVModbusRequestHandler(ModbusConnectedRequestHandler):
 
         response.transaction_id = request.transaction_id
         response.unit_id = request.unit_id
-        print "Sending Request"
         self.send(response)
 
     def update_actuator(self, addr, value):
@@ -215,8 +215,8 @@ class PLC(ModbusTcpServer, object):
             if v.get_type() == CO:
                 val = int(self.get_store(k,bool))           
             else:
-                val = self.get_store(k, float)
-            if val:
+                val = self.get_store(k, float, 0)
+            if val is not None:
                 self.set(k,val)
 
     def run(self, name, period, duration=None, *args, **kwargs):
