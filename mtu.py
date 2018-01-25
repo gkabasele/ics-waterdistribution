@@ -14,17 +14,14 @@ class ProcessRange(object):
     def __init__(self, low, high, fl=None, fh=None):
         self.high = high
         self.low = low
-        if fh is not None and fl is not None:
-            self.action = (fh,fl)
+        if fl is not None and fh is not None:
+            self.action = (fl,fh)
 
     def execute_action(self, value, *args, **kwargs):
         if value < self.low:
-            self.action[1](*args, **kwargs)
-        elif value > self.high:
             self.action[0](*args, **kwargs)
-
-    def add_action(self, fh, fl):
-        self.action = f
+        elif value > self.high:
+            self.action[1](*args, **kwargs)
 
 class ModbusTcpClientThread(threading.Thread):
 
@@ -132,10 +129,12 @@ class MTU(object):
     def write_variable(self, name, value):
         var = self.variables[name]
         try:
-            if var.get_type == CO : 
+            if var.get_type() == CO : 
                 self.plcs[name].write_coil(var.get_addr(), value)
             elif var.get_type() == HR:
                 self.plcs[name].write_register(var.get_addr(), value)
+            else:
+                print "Invalid variable type"
         except ConnectionException:
             logger.error("Unable to write value %s from %s:%d" %(name))
 
@@ -168,19 +167,12 @@ class WaterDistribution(MTU):
     def main_loop(self, *args, **kwargs):
 
         self.pump = self.get_variable(PUMP_RNG)
-        print "Pump: ", self.pump
-
         self.t1_lvl = self.get_variable(TANK1_LVL)
-        print "Level Tank1: ", self.t1_lvl
-
         self.t1_vlv = self.get_variable(TANK1_VLV)
-        print "Valve Tank1: ", self.t1_vlv
-        
         self.flow_rate = self.get_variable(FLOW_RATE)
-        print "Flow rate: ", self.flow_rate
-
         self.t2_lvl = self.get_variable(TANK2_LVL)
-        print "Level Tank2: ", self.t2_lvl
+
+        print "Pump: %s,T1_LVL: %s, T1_VLV: %s, FR: %s, T2_LVL: %s" % (self.pump, self.t1_lvl, self.t1_vlv, self.flow_rate, self.t2_lvl) 
 
         if self.t1_lvl is not None:
             cond_t1 = self.cond[TANK1_LVL]
@@ -193,12 +185,11 @@ class WaterDistribution(MTU):
             cond_t2.execute_action(self.t2_lvl)
 
     def close_valve(self, *args, **kwargs):
-        print "Closing valve"
         if self.t1_vlv:
             self.write_variable(TANK1_VLV, False)
 
     def open_valve(self, *args, **kwargs):
-        if self.t1_vlv:
+        if not self.t1_vlv:
             self.write_variable(TANK1_VLV, True)
 
 

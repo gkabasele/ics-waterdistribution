@@ -41,6 +41,8 @@ p_length = 40
 
 # Variable Name
 
+if os.path.exists(STORE):
+    shutil.rmtree(STORE)
 
 p = PhysicalProcess(STORE)
 

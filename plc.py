@@ -50,8 +50,8 @@ class KVModbusRequestHandler(ModbusConnectedRequestHandler):
             # updating actuator 
             #check if its a write request
             if request.function_code in [5,6,15,16]:
-                print "Updating actuator"
-                self.update_actuator(request.address, request.value)
+                is_coil = ((request.function_code % 5) == 0)
+                self.update_actuator(request.address, request.value, is_coil)
 
         except NoSuchSlaveException as ex:
             logger.debug("requested slave does not exist: %s" % request.unit_id )
@@ -66,10 +66,11 @@ class KVModbusRequestHandler(ModbusConnectedRequestHandler):
         response.unit_id = request.unit_id
         self.send(response)
 
-    def update_actuator(self, addr, value):
+    def update_actuator(self, addr, value, is_coil):
         try:
-            name =  self.server.addr_to_var[addr]
-            self.server.store.put(name, value)  
+            type_ = CO if is_coil else HR 
+            name =  self.server.addr_to_var[type_][addr]
+            self.server.put_store(name, value)  
         except KeyError:
             print "Variable %s doest not exist" % name
         
@@ -92,7 +93,7 @@ class PLC(ModbusTcpServer, object):
         (context, identity) =  self._init_modbus(ip, port, discrete_input, coils, holding_reg, input_reg)
         self.context = context
         self.variables = {}
-        self.addr_to_var = {}
+        self.addr_to_var = {HR : {}, DI : {}, IR: {}, CO: {}}
         self.index = {HR : 0, DI: 0, IR: 0, CO: 0}
         self.setting_address(kwargs)
         self.loop = None
@@ -109,7 +110,7 @@ class PLC(ModbusTcpServer, object):
             _type,size = v
             addr = self.index[_type]
             self.variables[k] = ProcessVariable(_type, addr, size)
-            self.addr_to_var[addr] = k
+            self.addr_to_var[_type][addr] = k
             self.index[_type] += size
 
     def _init_modbus(self, ip, port, discrete_input, coils, holding_reg, input_reg):
