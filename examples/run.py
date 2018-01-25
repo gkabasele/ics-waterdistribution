@@ -10,6 +10,7 @@ from mtu import WaterDistribution
 from component import *
 from twisted.internet import reactor 
 from pymodbus.server.sync import ModbusConnectedRequestHandler
+from constants import *
 
 
 if os.path.exists(LOG):
@@ -57,14 +58,21 @@ p.add_variable(tank1, TANK1_VLV)
 p.add_variable(pipeline, FLOW_RATE)
 p.add_variable(tank2, TANK2_LVL)
 
-index_pump_tank = p.add_interaction(pump, tank1)
-index_tank_pipe = p.add_interaction(tank1, pipeline)
-index_pipe_tank = p.add_interaction(pipeline, tank2)
+#index_pump_tank = p.add_interaction(pump, tank1)
+#index_tank_pipe = p.add_interaction(tank1, pipeline)
+#index_pipe_tank = p.add_interaction(pipeline, tank2)
+(pump_out, tank1_in) = p.add_interaction(pump, tank1)
+(tank1_out, pipe_in) = p.add_interaction(tank1, pipeline)
+(pipe_out, tank2_in) = p.add_interaction(pipeline, tank2)
 
-pump.add_task('pump-task', PERIOD, DURATION, PUMP_RNG, outbuf=index_pump_tank[0]) 
-tank1.add_task('tank1-task', PERIOD, DURATION, TANK1_LVL, TANK1_VLV, inbuf=index_pump_tank[1], outbuf = index_tank_pipe[0])
-pipeline.add_task('pipeline-task', PERIOD, DURATION, FLOW_RATE, inbuf= index_tank_pipe[1], outbuf = index_pipe_tank[0])
-tank2.add_task('tank2-task', PERIOD, DURATION, TANK2_LVL, inbuf= index_pipe_tank[1])
+#pump.add_task('pump-task', PERIOD, DURATION, PUMP_RNG, outbuf=index_pump_tank[0]) 
+pump.add_task('pump-task', PERIOD, DURATION, PUMP_RNG, outbuf=pump_out) 
+#tank1.add_task('tank1-task', PERIOD, DURATION, TANK1_LVL, TANK1_VLV, inbuf=index_pump_tank[1], outbuf = index_tank_pipe[0])
+tank1.add_task('tank1-task', PERIOD, DURATION, TANK1_LVL, TANK1_VLV, inbuf=tank_in, outbuf = tank_out)
+#pipeline.add_task('pipeline-task', PERIOD, DURATION, FLOW_RATE, inbuf= index_tank_pipe[1], outbuf = index_pipe_tank[0])
+pipeline.add_task('pipeline-task', PERIOD, DURATION, FLOW_RATE, inbuf= pipe_in, outbuf = pipe_out)
+#tank2.add_task('tank2-task', PERIOD, DURATION, TANK2_LVL, inbuf= index_pipe_tank[1])
+tank2.add_task('tank2-task', PERIOD, DURATION, TANK2_LVL, inbuf= tank2_in)
 
 
 p.run()

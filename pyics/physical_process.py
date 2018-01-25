@@ -47,11 +47,11 @@ class PhysicalProcess(object):
     def add_interaction(self, comp1, comp2, size=1):
         ''' Simulate the interaction between 2 physical component
 
-            Return index of input buffer and output buffer
-
             :param comp1: a physical component
             :param comp2: a physical component
             :param size: size of the buffer linking the 2 component
+
+            :return: index of input buffer and output buffer for each component
         '''
         # check if it already exist
         try:

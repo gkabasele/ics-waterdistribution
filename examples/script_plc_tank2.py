@@ -1,13 +1,14 @@
 import argparse
-from utils import * 
+from utils import *
 from plc import *
+from constants import *
 
 def main(args):
-    plc = PLC(args.ip, args.port, args.store, "plc-tank1",tank1_level = (HR,1) , tank1_valve = (CO,1))
+    plc = PLC(args.ip, args.port, args.store, "plc-tank2",tank2_level = (HR,1))
     #plc.export_variables(args.filename)
-    plc.run('plc-tank1', args.period, args.duration )
+    plc.run('plc-tank2', args.period, args.duration)
     plc.wait_end(True)
-    
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

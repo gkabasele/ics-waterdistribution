@@ -18,19 +18,19 @@ INBUF = "inbuf"
 OUTBUF = "outbuf"
 
 # Variable Name
-PUMP_RNG = "pump_running"
-TANK1_LVL = "tank1_level"
-TANK2_LVL = "tank2_level"
-TANK1_VLV = "tank1_valve"
-FLOW_RATE = "flow_rate"
+#PUMP_RNG = "pump_running"
+#TANK1_LVL = "tank1_level"
+#TANK2_LVL = "tank2_level"
+#TANK1_VLV = "tank1_valve"
+#FLOW_RATE = "flow_rate"
 
 # Store
-STORE = './variables'
-EXPORT_VAR = 'lplc_var'
-PERIOD = 1
-DURATION = 60
+#STORE = './variables'
+#EXPORT_VAR = 'lplc_var'
+#PERIOD = 1
+#DURATION = 60
 
-LOG = "ics.log"
+#LOG = "ics.log"
 
 registers_type = {DI:2, IR:4, HR:3, CO:1}
 
