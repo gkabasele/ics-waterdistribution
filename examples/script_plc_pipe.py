@@ -1,6 +1,6 @@
 import argparse
-from utils import *
-from plc import *
+from pyics.utils import *
+from pyics.plc import *
 from constants import *
 
 def main(args):

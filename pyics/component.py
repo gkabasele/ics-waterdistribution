@@ -194,7 +194,6 @@ class Pump(Component):
             self.running = self.get(var_running, 'b')
         except KeyError:
             self.set(var_running, self.running)    
-            logger.error("%s : Setting variable %s to %s" %(self.name, var_running, self.running))
         if not self.running:
             self.flow_out = 0
         self.write_buffer(self.flow_out, index_out)
@@ -253,12 +252,9 @@ class Tank(Component):
                 var_valve = args[1]
             if var_valve:
                 try:
-                    logger.debug("%s: valve state %s" % (self.name, self.valve))
                     self.valve = self.get(var_valve,'b')
-                    logger.debug("%s: changing valve to %s" % (self.name, self.valve))
                 except KeyError:
                     self.set(var_valve, self.valve)
-                    logger.debug("%s: changing valve to %s" % (self.name, self.valve))
 
             
             if self.has_inbuf():

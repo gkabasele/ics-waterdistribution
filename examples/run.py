@@ -3,13 +3,11 @@ import shutil
 import time
 import logging
 import subprocess
-from physical_process import  PhysicalProcess
-from utils import *
-from plc import PLC
-from mtu import WaterDistribution
-from component import *
-from twisted.internet import reactor 
-from pymodbus.server.sync import ModbusConnectedRequestHandler
+from pyics.physical_process import  PhysicalProcess
+from pyics.utils import *
+from pyics.plc import PLC
+from pyics.component import *
+from waterdistribution import WaterDistribution
 from constants import *
 
 
@@ -68,7 +66,7 @@ p.add_variable(tank2, TANK2_LVL)
 #pump.add_task('pump-task', PERIOD, DURATION, PUMP_RNG, outbuf=index_pump_tank[0]) 
 pump.add_task('pump-task', PERIOD, DURATION, PUMP_RNG, outbuf=pump_out) 
 #tank1.add_task('tank1-task', PERIOD, DURATION, TANK1_LVL, TANK1_VLV, inbuf=index_pump_tank[1], outbuf = index_tank_pipe[0])
-tank1.add_task('tank1-task', PERIOD, DURATION, TANK1_LVL, TANK1_VLV, inbuf=tank_in, outbuf = tank_out)
+tank1.add_task('tank1-task', PERIOD, DURATION, TANK1_LVL, TANK1_VLV, inbuf=tank1_in, outbuf = tank1_out)
 #pipeline.add_task('pipeline-task', PERIOD, DURATION, FLOW_RATE, inbuf= index_tank_pipe[1], outbuf = index_pipe_tank[0])
 pipeline.add_task('pipeline-task', PERIOD, DURATION, FLOW_RATE, inbuf= pipe_in, outbuf = pipe_out)
 #tank2.add_task('tank2-task', PERIOD, DURATION, TANK2_LVL, inbuf= index_pipe_tank[1])
@@ -106,6 +104,7 @@ print tank1_err
 #print pipe_out
 #print tank2_out
 print mtu_out
+print mtu_err
 
 pump_proc.wait()
 tank1_proc.wait()

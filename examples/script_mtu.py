@@ -1,7 +1,8 @@
 import argparse
-from utils import *
-from mtu import *
+from pyics.utils import *
+from pyics.mtu import *
 from constants import *
+from waterdistribution import WaterDistribution
 
 
 def main(args):
