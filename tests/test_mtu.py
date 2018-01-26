@@ -7,7 +7,7 @@ from pyics.mtu import *
 class TestMTU(unittest.TestCase):
 
     # called before each case
-    def setUP(self):
+    def setUp(self):
         pass
 
     # called after each case

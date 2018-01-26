@@ -6,7 +6,7 @@ from pyics.plc import *
 class TestPLC(unittest.TestCase):
 
     # called before each case
-    def setUP(self):
+    def setUp(self):
         pass
 
     # called after each case
