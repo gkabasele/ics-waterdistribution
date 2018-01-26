@@ -56,7 +56,10 @@ class Component(object):
         '''
         if typeobj == "b":
             val = self.store.get(name)
-            return val == "True"
+            if val == "True" or val == "False":
+                return val == "True"
+            else:
+                raise TypeError
         return typeobj(self.store.get(name))
 
     def set(self, name, value):
@@ -132,6 +135,7 @@ class Component(object):
         :param item: item to write in the buffer
         :param index: The index of the buffer to write into
 
+        :return:
         '''
         outbuf = self.outbufs[index]
         if not outbuf.full():
@@ -151,6 +155,8 @@ class Component(object):
 
     def start(self):
         '''Start all the task of the component
+
+           :return:
         '''
         s= "Starting Component %s with task: \n" % self.name
         for k,v in self.tasks.iteritems():
@@ -174,6 +180,8 @@ class Pump(Component):
 
             :param flow_out: volume of water outputed by the pump (m^3/s)
             :param running: is the pump running or not
+
+            :return:
         '''
         super(Pump, self).__init__(store, name)
         self.flow_out = flow_out
@@ -181,9 +189,9 @@ class Pump(Component):
         
 
     def computation(self, *args, **kwargs):
-        '''
-            - Check if running from actuators
-            - Change flow_out accordingly
+        ''' Computation made by the component based on the input buffers
+
+            :return:
         '''
         var_running = args[0]
         index_out = kwargs.get(OUTBUF) 
@@ -225,11 +233,6 @@ class Tank(Component):
         self.valve = valve
 
     def computation(self, *args, **kwargs):
-            '''
-                - compute output rate
-                - change flow level
-                - output flow rate
-            '''
             '''
                 Bernouilli equation  : a * sqrt(2*g*h)
                 - a : size of the hole in the tank to output water (m^2)

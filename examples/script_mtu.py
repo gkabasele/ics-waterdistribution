@@ -10,7 +10,7 @@ def main(args):
     mtu.get_dir(args.filename)
     mtu.add_cond(TANK1_LVL, 0, 30, mtu.close_valve, mtu.open_valve)
     mtu.add_cond(FLOW_RATE, 0, 50, mtu.open_valve, mtu.close_valve)
-    mtu.add_cond(TANK2_LVL, 1, 30, mtu.open_valve, mtu.close_valve)
+    mtu.add_cond(TANK2_LVL, 0, 30, mtu.open_valve, mtu.close_valve)
     mtu.create_task('mtu', args.period, args.duration)
     mtu.start()
     mtu.wait_end()

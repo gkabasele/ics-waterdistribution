@@ -24,11 +24,6 @@ logging.basicConfig(filename = "ics.log", mode= 'w', format='[%(asctime)s][%(lev
 '''
 
 
-#if os.path.exists(EXPORT_VAR):
-#    shutil.rmtree(EXPORT_VAR)
-#
-#os.mkdir(EXPORT_VAR)
-
 # Constant
 # tank
 t_height= 50
@@ -38,7 +33,6 @@ t_hole = 10
 p_diameter = 20
 p_length = 40
 
-# Variable Name
 
 if os.path.exists(STORE):
     shutil.rmtree(STORE)
@@ -56,20 +50,13 @@ p.add_variable(tank1, TANK1_VLV)
 p.add_variable(pipeline, FLOW_RATE)
 p.add_variable(tank2, TANK2_LVL)
 
-#index_pump_tank = p.add_interaction(pump, tank1)
-#index_tank_pipe = p.add_interaction(tank1, pipeline)
-#index_pipe_tank = p.add_interaction(pipeline, tank2)
 (pump_out, tank1_in) = p.add_interaction(pump, tank1)
 (tank1_out, pipe_in) = p.add_interaction(tank1, pipeline)
 (pipe_out, tank2_in) = p.add_interaction(pipeline, tank2)
 
-#pump.add_task('pump-task', PERIOD, DURATION, PUMP_RNG, outbuf=index_pump_tank[0]) 
 pump.add_task('pump-task', PERIOD, DURATION, PUMP_RNG, outbuf=pump_out) 
-#tank1.add_task('tank1-task', PERIOD, DURATION, TANK1_LVL, TANK1_VLV, inbuf=index_pump_tank[1], outbuf = index_tank_pipe[0])
 tank1.add_task('tank1-task', PERIOD, DURATION, TANK1_LVL, TANK1_VLV, inbuf=tank1_in, outbuf = tank1_out)
-#pipeline.add_task('pipeline-task', PERIOD, DURATION, FLOW_RATE, inbuf= index_tank_pipe[1], outbuf = index_pipe_tank[0])
 pipeline.add_task('pipeline-task', PERIOD, DURATION, FLOW_RATE, inbuf= pipe_in, outbuf = pipe_out)
-#tank2.add_task('tank2-task', PERIOD, DURATION, TANK2_LVL, inbuf= index_pipe_tank[1])
 tank2.add_task('tank2-task', PERIOD, DURATION, TANK2_LVL, inbuf= tank2_in)
 
 
@@ -112,11 +99,3 @@ pipe_proc.wait()
 tank2_proc.wait()
 mtu_proc.wait()
 p.wait_end()
-
-#print plc_pump.get(PUMP_RNG)
-#print plc_tank1.get(TANK1_LVL)
-#print plc_tank1.get(TANK1_VLV)
-#print plc_pipe.get(FLOW_RATE)
-#print plc_tank2.get(TANK2_LVL)
-
-
