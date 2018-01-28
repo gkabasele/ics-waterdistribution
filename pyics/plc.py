@@ -10,9 +10,6 @@ from pymodbus.datastore import ModbusSequentialDataBlock
 from pymodbus.datastore import ModbusSlaveContext, ModbusServerContext
 from pymodbus.factory import ServerDecoder
 
-from twisted.internet.task import LoopingCall
-from twisted.internet import reactor
-
 logger = logging.getLogger(__name__)
 
 class ProcessVariable(object):
@@ -165,8 +162,12 @@ class PLC(ModbusTcpServer, object):
         self.store.put(name, str(value))
 
     def export_variables(self, filename):
-        '''
-        Export mapping between variable and their address
+        '''Export mapping between variable and their address
+
+           :param filename: name of the time to export the variables
+           
+           :return:
+
         '''
         f = open(filename+'/'+self.name+'.ex', 'w')
         for k,v in self.variables.iteritems():
@@ -186,7 +187,10 @@ class PLC(ModbusTcpServer, object):
         try:
             if typeobj == "b":
                 item = self.store.get(name)
-                return item == "True"
+                if item == "True" or item == "False":
+                    return item == "True"
+                else:
+                    raise TypeError
             else:
                 item = typeobj(self.store.get(name))
                 return item
