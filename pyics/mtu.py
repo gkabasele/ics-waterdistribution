@@ -60,6 +60,7 @@ class MTU(object):
             name = l[1] 
             _type,addr,size = tuple(line.split(':')[2].split(','))
 
+
             if (ip,port) not in hist:
                 self.add_plc(ip, port, name, ProcessVariable(_type, int(addr), int(size)))
                 hist.add((ip,port))
@@ -76,6 +77,9 @@ class MTU(object):
                 if client.connect():
                     self.clients[(plc_ip,plc_port)] = client 
                     self.port += 1
+                else: 
+                    logger.info("Could not connect the server %s:%s" % (plc_ip, plc_port))
+                    print "Could not connect to the server %s:%s" % (plc_ip, plc_port)
             else:
                 client = self.clients[(plc_ip, plc_port)]
             
@@ -112,10 +116,14 @@ class MTU(object):
 
         except ConnectionException:
             logger.error("Unable to read value %s from Modbus" % (name))
+            print "Unable to read value %s from Modbus" % (name)
         except AttributeError:
             if type(res) is ModbusIOException:
                 logger.error("ModbusIOException: %s " % name )
                 print res.message
+        except KeyError:
+            logger.error("Variable name: %s does not exist"% (name))
+            print "Variable name: %s does not exist"% (name)
 
     def write_variable(self, name, value):
         var = self.variables[name]
@@ -127,7 +135,8 @@ class MTU(object):
             else:
                 print "Invalid variable type"
         except ConnectionException:
-            logger.error("Unable to write value %s from %s:%d" %(name))
+            logger.error("Unable to write value %s to %s" %(value, name ))
+            print "Unable to write value %s to %s" %(value, name)
 
     def start(self):
         self.task.start()

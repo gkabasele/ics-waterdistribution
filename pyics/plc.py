@@ -36,15 +36,16 @@ class ProcessVariable(object):
 class KVModbusRequestHandler(ModbusConnectedRequestHandler):
 
     def execute(self, request):
-        ''' The callback to call with the resulting message
+        ''' Callback when receiving a request, potentially update actuators
 
         :param request: the decoded request message
+        
+        :return:
         '''
         try:
             logger.debug("Received request")
             context = self.server.context[request.unit_id]
             response = request.execute(context)
-            # updating actuator 
             #check if its a write request
             if request.function_code in [5,6,15,16]:
                 is_coil = ((request.function_code % 5) == 0)
@@ -69,7 +70,7 @@ class KVModbusRequestHandler(ModbusConnectedRequestHandler):
             name =  self.server.addr_to_var[type_][addr]
             self.server.put_store(name, value)  
         except KeyError:
-            print "Variable %s doest not exist" % name
+            logger.debug( "Variable %s doest not exist" % name)
         
 
 class PLC(ModbusTcpServer, object):
