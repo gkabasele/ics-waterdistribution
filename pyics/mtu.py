@@ -62,18 +62,17 @@ class MTU(object):
 
 
             if (ip,port) not in hist:
-                self.add_plc(ip, port, name, ProcessVariable(_type, int(addr), int(size)))
-                hist.add((ip,port))
+                if self.add_plc(ip, port, name, ProcessVariable(_type, int(addr), int(size))):
+                    hist.add((ip,port))
             else:
                 self.add_plc(ip, port, name, ProcessVariable(_type, int(addr),int(size)), False)
         f.close()
              
 
     def add_plc(self, plc_ip, plc_port, name, process_variable, create_client=True):
-
         try:
             if create_client:
-                client = self.client_class(host=plc_ip, port=plc_port, source_address=(self.ip, self.port))            
+                client = self.client_class(host=plc_ip,port=plc_port, source_address=(self.ip, self.port))
                 if client.connect():
                     self.clients[(plc_ip,plc_port)] = client 
                     self.port += 1
@@ -87,9 +86,10 @@ class MTU(object):
                 logger.info("Adding variable %s at PLC(%s:%d)" % (name, plc_ip, plc_port))
                 self.variables[name] = process_variable
                 self.plcs[name] = client
-
+                return True
         except ConnectionException:
-            logger.error("Unable to connect to Modbus server %s:%d" % (plc_ip, plc_port))
+            logger.error("Unable to connect to Modbus server %s:%s" % (plc_ip, plc_port))
+            print "Unable to connect to Modbus server %s:%s" % (plc_ip, plc_port)
 
     def add_cond(self, name, low, high, fl=None, fh=None):
         self.cond[name] = ProcessRange(low, high, fl, fh)
@@ -99,8 +99,8 @@ class MTU(object):
 
     #TODO add other function
     def get_variable(self, name):
-        var = self.variables[name]
         try:
+            var = self.variables[name]
             res = None
             type_ = var.get_type()
             if type_ == CO :
@@ -126,8 +126,8 @@ class MTU(object):
             print "Variable name: %s does not exist"% (name)
 
     def write_variable(self, name, value):
-        var = self.variables[name]
         try:
+            var = self.variables[name]
             if var.get_type() == CO : 
                 self.plcs[name].write_coil(var.get_addr(), value)
             elif var.get_type() == HR:
@@ -137,6 +137,9 @@ class MTU(object):
         except ConnectionException:
             logger.error("Unable to write value %s to %s" %(value, name ))
             print "Unable to write value %s to %s" %(value, name)
+        except KeyError:
+            logger.error("Variable name: %s does not exist" % (name))
+            print "Variable name: %s does not exist" % name
 
     def start(self):
         self.task.start()
