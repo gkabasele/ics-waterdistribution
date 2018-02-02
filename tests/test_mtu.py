@@ -57,8 +57,8 @@ class TestMTU(unittest.TestCase):
             shutil.rmtree(self.filename)
 
         self.mtu.close()
-        #self.plc.shutdown()
-        #self.plc.server_close()
+        self.plc.shutdown()
+        self.plc.server_close()
     
     def test_cond(self):
 
@@ -80,24 +80,19 @@ class TestMTU(unittest.TestCase):
         self.assertTrue(2 in val)
         self.plc.server_close()
 
-
-    #def test_get_variable(self):
-    #    plc_thread =  PLCTestThread(self.plc)
-    #    plc_thread.start()
-    #    self.assertEquals(self.mtu.get_variable(self.lvl), 0) 
-    #    self.assertEquals(self.mtu.get_variable(self.temp), 5)
-    #    self.assertEquals(self.mtu.get_variable(self.press), 10)
-    #    self.assertFalse(self.mtu.get_variable(self.vlv))
-    #    self.plc.shutdown()
-    #    self.plc.server_close()
+    def test_get_variable(self):
+        plc_thread =  PLCTestThread(self.plc)
+        plc_thread.start()
+        self.assertEquals(self.mtu.get_variable(self.lvl), 0) 
+        self.assertEquals(self.mtu.get_variable(self.temp), 5)
+        self.assertEquals(self.mtu.get_variable(self.press), 10)
+        self.assertFalse(self.mtu.get_variable(self.vlv))
 
     def test_write_variable(self):
         plc_thread = PLCTestThread(self.plc)
         plc_thread.start()
         self.mtu.write_variable(self.vlv, True)
         self.assertTrue(self.mtu.get_variable(self.vlv))
-        self.plc.shutdown()
-        #plc_thread.join()
 
 if __name__ == "__main__":
     unittest.main()

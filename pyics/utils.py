@@ -1,7 +1,5 @@
 import threading
-import sys
 import time
-import itertools
 
 HR = "h"
 CO = "c"
@@ -17,30 +15,18 @@ GRAVITY = 9.8
 INBUF = "inbuf"
 OUTBUF = "outbuf"
 
-# Variable Name
-#PUMP_RNG = "pump_running"
-#TANK1_LVL = "tank1_level"
-#TANK2_LVL = "tank2_level"
-#TANK1_VLV = "tank1_valve"
-#FLOW_RATE = "flow_rate"
+registers_type = {DI: 2, IR: 4, HR: 3, CO: 1}
 
-# Store
-#STORE = './variables'
-#EXPORT_VAR = 'lplc_var'
-#PERIOD = 1
-#DURATION = 60
-
-#LOG = "ics.log"
-
-registers_type = {DI:2, IR:4, HR:3, CO:1}
 
 class PeriodicTask(threading.Thread):
     # period in second
-    def __init__(self, name, period, task, duration=None,end=None, endargs=None,*args, **kwargs):
+    def __init__(self, name, period, task, duration=None, end=None,
+                 endargs=None, *args, **kwargs):
+
         threading.Thread.__init__(self)
         self.name = name
         self.period = period
-        self.duration = duration 
+        self.duration = duration
         self.task = task
         self.end = end
         self.endargs = endargs
@@ -65,7 +51,7 @@ class PeriodicTask(threading.Thread):
 
         if self.end is not None:
             if self.endargs is not None:
-                self.end(endargs)
+                self.end(self.endargs)
             else:
                 self.end()
 
@@ -75,13 +61,14 @@ class PeriodicTask(threading.Thread):
 
 class CustomDict(dict):
     ''' Custom dictionnary to ensure that a key is inserted only once
-        
     '''
+
     def __setitem__(self, k, v):
         if k in self.keys():
             raise ValueError("Key already exists")
         else:
             return super(CustomDict, self).__setitem__(k, v)
+
 
 def first_true(iterable, default=False, pred=None):
     """Returns the first true value in the iterable.
@@ -93,6 +80,7 @@ def first_true(iterable, default=False, pred=None):
 
     """
     return next(filter(pred, iterable), default)
+
 
 def wait_until(predicate, timeout=30, period=0.25, *args, **kwargs):
     end = time.time() + timeout
