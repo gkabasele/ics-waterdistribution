@@ -6,10 +6,11 @@ from component import *
 
 logger = logging.getLogger(__name__)
 
+
 class PhysicalProcess(object):
 
     def __init__(self, store):
-        
+
         if os.path.exists(store):
             shutil.rmtree(store)
 
@@ -34,7 +35,7 @@ class PhysicalProcess(object):
 
 
 
-    def add_variable(self, comp ,var):
+    def add_variable(self, comp, var):
         ''' Add a process variable
 
             :param var: process variable

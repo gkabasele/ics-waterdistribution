@@ -230,7 +230,7 @@ class PLC(ModbusTcpServer, object):
             :param duration: duration of the task, the task is performed duration/period times
             :return:
         '''
-        self.loop = PeriodicTask(name, period, self.update_registers, duration, self.shutdown ,*args, **kwargs)
+        self.loop = PeriodicTask(name, period, self.update_registers, duration, self.shutdown, *args, **kwargs)
         self.loop.start()
 
     def wait_end(self, server=False):
