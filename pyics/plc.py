@@ -9,6 +9,7 @@ from pymodbus.datastore import ModbusSlaveContext, ModbusServerContext
 from pymodbus.exceptions import NoSuchSlaveException
 from pymodbus.pdu import ModbusExceptions as merror
 
+
 logger = logging.getLogger(__name__)
 
 
