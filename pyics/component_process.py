@@ -8,7 +8,6 @@ from utils import *
 
 logger = logging.getLogger(__name__)
 
-
 class ComponentProcess(object):
 
     def __init__(self, env, store, name, *args, **kwargs):

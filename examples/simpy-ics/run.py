@@ -11,7 +11,11 @@ from pyics.component_process import ComponentProcess
 from pyics.utils import *
 from constants import *
 
-logger = logging.getLogger(__name__)
+
+if os.path.exists(LOG):
+    os.remove(LOG)
+
+logging.basicConfig(filename = LOG, mode = 'w', format='[%(asctime)s][%(levelname)s][%(pathname)s-%(lineno)d] %(message)s', level = logging.DEBUG)
 
 # Three tank system 
 class TTankSystem(ComponentProcess):
@@ -81,11 +85,11 @@ class TTankSystem(ComponentProcess):
 
 if os.path.exists(STORE):
     shutil.rmtree(STORE)
-
+'''
 if os.path.exists(EXPORT_VAR):
     shutil.rmtree(EXPORT_VAR)
-
 os.mkdir(EXPORT_VAR)
+'''
 
 env = simpy.rt.RealtimeEnvironment(factor=1)
 phys_proc = (TTankSystem(env, STORE, "Three Tank System"))

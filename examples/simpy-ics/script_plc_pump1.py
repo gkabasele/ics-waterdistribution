@@ -1,13 +1,15 @@
 import argparse
+import logging
 from pyics.utils import * 
 from pyics.plc import *
 from constants import *
+
 
 print "Lauching pump1"
 
 def main(args):
     plc = PLC(args.ip, args.port, args.store, "plc-pump1", pump1 = (CO,1))
-    plc.export_variables(args.filename)
+#    plc.export_variables(args.filename)
     plc.run('plc-pump1', args.period, args.duration)
     plc.wait_end(True)
 
