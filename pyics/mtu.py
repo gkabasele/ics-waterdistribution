@@ -84,6 +84,7 @@ class MTU(object):
             
             if client.socket:
                 logger.info("Adding variable %s at PLC(%s:%d)" % (name, plc_ip, plc_port))
+                print "Adding variable %s at PLC (%s:%d)" % (name, plc_ip, plc_port)
                 self.variables[name] = process_variable
                 self.plcs[name] = client
                 return True

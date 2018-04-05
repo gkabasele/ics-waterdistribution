@@ -3,9 +3,11 @@ from pyics.utils import *
 from pyics.plc import *
 from constants import *
 
+print "Launching valve"
+
 def main(args):
     plc = PLC(args.ip, args.port, args.store, "plc-valve", valve = (CO,1))
-    #plc.export_variables(args.filename)
+    plc.export_variables(args.filename)
     plc.run('plc-valve', args.period, args.duration)
     plc.wait_end(True)
 

@@ -38,7 +38,7 @@ class TTankSystem(ComponentProcess):
 
         decrease_duration = 3
         
-        for i in range(5):
+        for i in range(10):
             print "(%d) Starting three tank system" % (self.env.now)
             self.pump1 = self.get(PUMP1, "b")
             if self.pump1:
@@ -48,17 +48,19 @@ class TTankSystem(ComponentProcess):
                 self.set(TANK1, self.tank1)
                 self.tank3 += 20
                 self.set(TANK3, self.tank3)
-                self.set(PUMP1, False)
+                self.pump1 = False
+                self.set(PUMP1, self.pump1)
             
             self.pump2 = self.get(PUMP2, "b")
             if self.pump2:
-                print "(%d) Pump2 is open, passig fluid from tank2 to tank3" % (self.env.now)
+                print "(%d) Pump2 is open, passing fluid from tank2 to tank3" % (self.env.now)
                 yield self.env.timeout(decrease_duration)
                 self.tank2 -= 20
                 self.set(TANK2, self.tank2)
                 self.tank3 += 20
                 self.set(TANK3, self.tank3)
-                self.set(PUMP2, False)
+                self.pump2 = False
+                self.set(PUMP2, self.pump2)
 
             self.valve = self.get(VALVE, "b")
             if self.valve:
@@ -66,7 +68,8 @@ class TTankSystem(ComponentProcess):
                 yield self.env.timeout(2*decrease_duration)
                 self.tank3 = 0
                 self.set(TANK3, self.tank3)
-                self.set(VALVE, False)
+                self.valve = False
+                self.set(VALVE, self.valve)
                 
             print "(%d) Approvisionning tank 1 and 2" % (self.env.now)
             yield self.env.timeout(decrease_duration)
@@ -79,18 +82,18 @@ class TTankSystem(ComponentProcess):
 if os.path.exists(STORE):
     shutil.rmtree(STORE)
 
+if os.path.exists(EXPORT_VAR):
+    shutil.rmtree(EXPORT_VAR)
+
+os.mkdir(EXPORT_VAR)
+
 env = simpy.rt.RealtimeEnvironment(factor=1)
 phys_proc = (TTankSystem(env, STORE, "Three Tank System"))
-
 
 t = threading.Thread(name='process', target=env.run)
 t.start()
 
-#env.run() 
-
-
 # run PLC
-
 py = "python"
 ip = "localhost"
 ip_args = "--ip"
@@ -98,15 +101,16 @@ port_args = "--port"
 store_args = "--store"
 prefix = "script_plc_"
 ex = "--export"
+dur_args = "--duration"
 
-tank1_proc = subprocess.Popen([py, prefix+"tank1.py", ip_args, ip, port_args, str(5020), store_args, STORE, ex, EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-tank2_proc = subprocess.Popen([py, prefix+"tank2.py", ip_args, ip, port_args, str(5021), store_args, STORE, ex, EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-tank3_proc = subprocess.Popen([py, prefix+"tank3.py", ip_args, ip, port_args, str(5022), store_args, STORE, ex, EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-pump1_proc = subprocess.Popen([py, prefix+"pump1.py", ip_args, ip, port_args, str(5023), store_args, STORE, ex, EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-pump2_proc = subprocess.Popen([py, prefix+"pump2.py", ip_args, ip, port_args, str(5024), store_args, STORE, ex, EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-valve_proc = subprocess.Popen([py, prefix+"valve.py", ip_args, ip, port_args, str(5025), store_args, STORE, ex, EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+tank1_proc = subprocess.Popen([py, prefix+"tank1.py", ip_args, ip, port_args, str(5020), store_args, STORE, dur_args, str(DURATION), ex, EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+tank2_proc = subprocess.Popen([py, prefix+"tank2.py", ip_args, ip, port_args, str(5021), store_args, STORE, dur_args, str(DURATION), ex, EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+tank3_proc = subprocess.Popen([py, prefix+"tank3.py", ip_args, ip, port_args, str(5022), store_args, STORE, dur_args, str(DURATION), ex, EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+pump1_proc = subprocess.Popen([py, prefix+"pump1.py", ip_args, ip, port_args, str(5023), store_args, STORE, dur_args, str(DURATION), ex, EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+pump2_proc = subprocess.Popen([py, prefix+"pump2.py", ip_args, ip, port_args, str(5024), store_args, STORE, dur_args, str(DURATION), ex, EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+valve_proc = subprocess.Popen([py, prefix+"valve.py", ip_args, ip, port_args, str(5025), store_args, STORE, dur_args, str(DURATION), ex, EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-mtu_proc = subprocess.Popen([py, "script_mtu.py", ip_args, ip, port_args, str(3000), "--import" ,EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+mtu_proc = subprocess.Popen([py, "script_mtu.py", ip_args, ip, port_args, str(3000), dur_args, str(DURATION), "--import" ,EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 (tank1_out, tank1_err) = tank1_proc.communicate()
 (tank2_out, tank2_err) = tank2_proc.communicate()
@@ -118,7 +122,16 @@ mtu_proc = subprocess.Popen([py, "script_mtu.py", ip_args, ip, port_args, str(30
 
 print tank1_out
 print tank1_err
-
+print tank2_out
+print tank2_err
+print tank3_out
+print tank3_err
+print pump1_out
+print pump1_err
+print pump2_out
+print pump2_err
+print valve_out
+print valve_err
 print mtu_out
 print mtu_err
 

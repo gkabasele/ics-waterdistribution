@@ -25,15 +25,15 @@ class MTUTankSystem(MTU):
         self.valve = self.get_variable(VALVE)
 
         if self.tank3 is not None:
-            if self.tank3 == 0:
+            if self.tank3 >= 0 and self.tank3 < 20:
                 self.pump1 = True
                 self.write_variable(PUMP1, self.pump1)
-            elif self.tank3 == 20:
+            elif self.tank3 >= 20 and self.tank3 < 40:
                 self.pump2 = True
                 self.write_variable(PUMP2, self.pump2)
-            elif self.tank3 == 40:
+            elif self.tank3 >= 40:
                 self.valve = True
-                self.write_variable(PUMP2, self.valve)
+                self.write_variable(VALVE, self.valve)
 
 
 

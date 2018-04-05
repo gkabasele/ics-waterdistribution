@@ -11,7 +11,7 @@ VALVE = "valve"
 STORE = './variables'
 EXPORT_VAR = 'lplc_var'
 PERIOD = 1
-DURATION = 12
+DURATION = 60
 
 LOG = "ics.log"
 
