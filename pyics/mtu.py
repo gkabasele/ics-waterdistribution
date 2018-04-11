@@ -72,7 +72,7 @@ class MTU(object):
     def add_plc(self, plc_ip, plc_port, name, process_variable, create_client=True):
         try:
             if create_client:
-                client = self.client_class(host=plc_ip,port=plc_port, source_address=(self.ip, self.port))
+                client = self.client_class(host=plc_ip,port=plc_port, source_address=(self.ip, self.port), retries = 5)
                 if client.connect():
                     self.clients[(plc_ip,plc_port)] = client 
                     self.port += 1
