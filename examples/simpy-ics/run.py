@@ -6,11 +6,16 @@ import simpy.rt
 import subprocess
 import threading
 import shutil
+import argparse
 
 from pyics.component_process import ComponentProcess
 from pyics.utils import *
 from constants import *
 
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--create", dest="create_dir", action="store_true")
+args = parser.parse_args()
 
 if os.path.exists(LOG):
     os.remove(LOG)
@@ -85,11 +90,11 @@ class TTankSystem(ComponentProcess):
 
 if os.path.exists(STORE):
     shutil.rmtree(STORE)
-'''
-if os.path.exists(EXPORT_VAR):
-    shutil.rmtree(EXPORT_VAR)
-os.mkdir(EXPORT_VAR)
-'''
+
+if args.create_dir:
+    if os.path.exists(EXPORT_VAR):
+        shutil.rmtree(EXPORT_VAR)
+    os.mkdir(EXPORT_VAR)
 
 env = simpy.rt.RealtimeEnvironment(factor=1)
 phys_proc = (TTankSystem(env, STORE, "Three Tank System"))
@@ -106,13 +111,14 @@ store_args = "--store"
 prefix = "script_plc_"
 ex = "--export"
 dur_args = "--duration"
+cre = "--create" if args.create_dir else ""
 
-tank1_proc = subprocess.Popen([py, prefix+"tank1.py", ip_args, ip, port_args, str(5020), store_args, STORE, dur_args, str(DURATION), ex, EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-tank2_proc = subprocess.Popen([py, prefix+"tank2.py", ip_args, ip, port_args, str(5021), store_args, STORE, dur_args, str(DURATION), ex, EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-tank3_proc = subprocess.Popen([py, prefix+"tank3.py", ip_args, ip, port_args, str(5022), store_args, STORE, dur_args, str(DURATION), ex, EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-pump1_proc = subprocess.Popen([py, prefix+"pump1.py", ip_args, ip, port_args, str(5023), store_args, STORE, dur_args, str(DURATION), ex, EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-pump2_proc = subprocess.Popen([py, prefix+"pump2.py", ip_args, ip, port_args, str(5024), store_args, STORE, dur_args, str(DURATION), ex, EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-valve_proc = subprocess.Popen([py, prefix+"valve.py", ip_args, ip, port_args, str(5025), store_args, STORE, dur_args, str(DURATION), ex, EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+tank1_proc = subprocess.Popen([py, prefix+"tank1.py", ip_args, ip, port_args, str(5020), store_args, STORE, dur_args, str(DURATION), ex, EXPORT_VAR, cre], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+tank2_proc = subprocess.Popen([py, prefix+"tank2.py", ip_args, ip, port_args, str(5021), store_args, STORE, dur_args, str(DURATION), ex, EXPORT_VAR, cre], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+tank3_proc = subprocess.Popen([py, prefix+"tank3.py", ip_args, ip, port_args, str(5022), store_args, STORE, dur_args, str(DURATION), ex, EXPORT_VAR, cre], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+pump1_proc = subprocess.Popen([py, prefix+"pump1.py", ip_args, ip, port_args, str(5023), store_args, STORE, dur_args, str(DURATION), ex, EXPORT_VAR, cre], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+pump2_proc = subprocess.Popen([py, prefix+"pump2.py", ip_args, ip, port_args, str(5024), store_args, STORE, dur_args, str(DURATION), ex, EXPORT_VAR, cre], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+valve_proc = subprocess.Popen([py, prefix+"valve.py", ip_args, ip, port_args, str(5025), store_args, STORE, dur_args, str(DURATION), ex, EXPORT_VAR, cre], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 mtu_proc = subprocess.Popen([py, "script_mtu.py", ip_args, ip, port_args, str(3000), dur_args, str(DURATION), "--import" ,EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
