@@ -65,7 +65,7 @@ class TTankSystem(ComponentProcess):
                 print "(%d) Pump2 is open, passing fluid from tank2 to tank3" % (self.env.now)
                 yield self.env.timeout(decrease_duration)
                 self.tank2 -= 20
-                self.set(TANK2, self.tank2)
+                self.set(TANK1, self.tank2)
                 self.tank3 += 20
                 self.set(TANK3, self.tank3)
                 self.pump2 = False
