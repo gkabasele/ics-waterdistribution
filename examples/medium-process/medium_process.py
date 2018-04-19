@@ -41,7 +41,7 @@ class MediumProcess(ComponentProcess):
 
         # second tank (charcoal)
         self.tc = 0
-        self.v3 = False
+        self.vtc = False
 
         # wagon
         self.we = False
@@ -60,12 +60,13 @@ class MediumProcess(ComponentProcess):
         self.set(V1, self.v1)
         self.set(V2, self.v2)
         self.set(T1, self.t1)
-        self.set(M1, self.M1)
-        self.set(VT1, self.VT1)
+        self.set(M1, self.m1)
+        self.set(VT1, self.vt1)
         self.set(S1, self.s1)
         self.set(VS1, self.vs1)
         self.set(S2, self.s2)
         self.set(VS2, self.vs2)
+        self.set(M2, self.m2)
         self.set(TC, self.tc)
         self.set(VTC, self.vtc)
         self.set(WE, self.we)
@@ -75,9 +76,6 @@ class MediumProcess(ComponentProcess):
         self.set(WS, self.ws)
         self.set(TF, self.tf)
         self.set(VTF, self.vtf)
-
-
-
 
     def computation(self, *args, **kwargs):
 
@@ -91,7 +89,7 @@ class MediumProcess(ComponentProcess):
 
         print "(%d) Staring physiscal process tank" % (self.env.now)
 
-        for i in range(30):
+        for i in range(2):
             self.v1 = self.get(V1, "b")
             if self.v1:
                 self.pass_fluid(amount_fluid_passing, A1, T1)
@@ -170,3 +168,8 @@ class MediumProcess(ComponentProcess):
         setattr(self, attr_to, tmp_to - amount)
         self.set(from_var, getattr(self, attr_from))
         self.set(to_var, getattr(self, attr_to))
+
+def start(store):
+    env = simpy.rt.RealtimeEnvironment(factor=1)
+    phys_proc = (MediumProcess(env, store, "Medium Process"))
+    env.run()

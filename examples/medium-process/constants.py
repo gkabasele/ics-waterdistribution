@@ -15,6 +15,7 @@ VS1 = "valveSilo1"
 
 S2 = "silo2"
 VS2 = "valveSilo2"
+M2 = "motor2"
 
 TC = "tankCharcoal"
 VTC = "valveTankCharcoal"
@@ -30,8 +31,8 @@ VTF = "valveTankFinal"
 
 
 # Store
-STORE = '.variables'
-EXPORT_VAR ='lplc_var'
+STORE = './variables'
+EXPORT_VAR ='./lplc_var'
 PERIOD = 1
 DURATION = 60
 
