@@ -4,13 +4,13 @@ from pyics.utils import *
 from pyics.plc import *
 from constants import *
 
-print "Launching {{ name_plc }}"
+print "Launching valve1"
 
 def main(args):
-    plc = PLC(args.ip, args.port, args.store, "plc-{{ name_plc }}", {{ name_plc }} = {{ variable_type }})
+    plc = PLC(args.ip, args.port, args.store, "plc-valve1", valve1 = ('c', 1))
     if args.create_ex:
         plc.export_variables(args.filename)
-    plc.run("{{ name_plc }}", args.period, args.duration)
+    plc.run("valve1", args.period, args.duration)
     plc.wait_end(True)
 
 if __name__ == "__main__":
