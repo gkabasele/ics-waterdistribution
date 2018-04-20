@@ -1,5 +1,6 @@
 import os
 from jinja2 import Environment, FileSystemLoader
+from constants import *
 
 PATH = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_ENVIRONMENT = Environment(
@@ -23,10 +24,20 @@ def create_index_html():
          html = render_template('index.html', context)
          f.write(html)
 
-def create_plc_script()
+def create_plc_scripts():
+
+    for k,v in varmap.iteritems():
+        context = { "name_plc" : k, "variable_type" : v} 
+        fname = "plcs/script_plc_"+k
+        with open(fname, 'w') as f:
+            plc_script = render_template('script_plc_template.py', context)
+            f.write(plc_srcipt)
+            
+
+
 
 def main():
-    create_index_html()
+    create_plc_scripts()
 
 ########################################
 

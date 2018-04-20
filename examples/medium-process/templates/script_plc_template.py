@@ -4,7 +4,7 @@ from pyics.utils import *
 from pyics.plc import *
 from constants import *
 
-print "{{ launch_message }}"
+print "Launching" +"{{ name_plc }}"
 
 def main(args):
     plc = PLC(args.ip, args.port, args.store, "{{ name_plc }}", "{{ variable_type }}")
