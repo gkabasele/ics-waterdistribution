@@ -2,7 +2,7 @@ import argparse
 import logging
 from pyics.utils import *
 from pyics.plc import *
-from constants import *
+#from constants import *
 
 print "Launching wagonlidOpen"
 

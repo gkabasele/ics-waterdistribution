@@ -89,7 +89,7 @@ class MediumProcess(ComponentProcess):
 
         print "(%d) Staring physiscal process tank" % (self.env.now)
 
-        for i in range(2):
+        for i in range(3):
             self.v1 = self.get(V1, "b")
             if self.v1:
                 self.pass_fluid(amount_fluid_passing, A1, T1)
