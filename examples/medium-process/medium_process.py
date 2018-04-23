@@ -114,9 +114,8 @@ class MediumProcess(ComponentProcess):
 
             self.vtc = self.get(VTC, "b")
             self.ws = self.get(WS, "b")
-            if self.vtc:
+            if self.vtc and self.ws:
                 self.pass_fluid(amount_fluid_passing, TC, WC)
-                self.ws = True
 
             self.wm = self.get(WM, "b")
             if self.wm:
@@ -124,12 +123,18 @@ class MediumProcess(ComponentProcess):
                 if self.we:
                     self.we = False
                     self.ws = True
+                    self.wm = False
                 elif self.ws:
                     self.ws = False
                     self.we = True
+                    self.wm = False
+                self.set(WE, self.we)
+                self.set(WS, self.ws)
+                self.set(WM, self.wm)
 
             self.wo = self.get(WO, "b")
-            if self.wo : 
+            self.we = self.get(WE, "b")
+            if self.wo  and self.we : 
                 self.pass_fluid(amount_fluid_passing, WC, S2) 
 
             self.m2 = self.get(M2, "b")

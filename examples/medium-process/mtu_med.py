@@ -49,30 +49,67 @@ class MTUMedSystem(MTU):
         for attr in vars(self):
             setattr(self, attr, self.get_variable(attr.upper()))
 
-            if self.t1 < 40:
+            self.tank1_management()
+            if self.s2 == 0 :
+                self.wagon_management()
+            elif self.s2 == 20 :
+                if self.s1 > 0 :
+                    self.change_coil(VS1, True)
+                elif self.s1 == 0:
+                    self.change_coil(VS1, False)
 
-                if self.vt1:
-                    self.change_coil(VT1, False)
+            if self.vtf:
+                self.change_coil(VTF, False)
 
-                if self.t1 >= 0 and self.t1 <20:
-                    self.change_coil(V1, True)
-                    self.change_coil(V2, False)
+            elif self.s2 == 60 : 
+                if self.m2:
+                    self.change_coil(M2, False)
+                    if self.tf < 60:
+                        self.change_coil(VTF, True)
+                else:
+                    self.change_coil(M2, True)
 
-                if self.t1 >= 20 :
-                    self.change_coil(V1, False)
-                    self.change_coil(V2, True)
 
-            elif self.t1 == 40:
-                if self.v1:
-                    self.change_coil(V1, False)
-                if self.v2:
-                    self.change_coil(V2, False)                
-                
-                if not self.m1: 
-                    self.change_coil(M1, True)
-                if self.m1:
-                    self.change_coil(M1, False)
+    def tank1_management(self):
+        if self.t1 < 40:
+            if self.vt1:
+                self.change_coil(VT1, False)
+
+            if self.t1 >= 0 and self.t1 <20:
+                self.change_coil(V1, True)
+                self.change_coil(V2, False)
+
+            if self.t1 >= 20 :
+                self.change_coil(V1, False)
+                self.change_coil(V2, True)
+
+        elif self.t1 == 40:
+            if self.v1:
+                self.change_coil(V1, False)
+            if self.v2:
+                self.change_coil(V2, False)                
+            
+            if not self.m1: 
+                self.change_coil(M1, True)
+            if self.m1:
+                self.change_coil(M1, False)
+                if self.s1 < 40:
                     self.change_coil(VT1, True)
+
+
+    def wagon_management(self):
+        if self.ws:
+           if self.wc < 20:
+               self.change_coil(VTC, True)
+           elif self.wc == 20:
+               self.change_coil(VTC, False)
+               self.change_coil(WM, True)
+        elif self.we: 
+            if self.wc == 20:
+               self.change_coil(WO, True)
+            elif self.wc < 20:
+               self.change_coil(WO, False)
+               self.change_coil(WM, True)
 
 
                 
