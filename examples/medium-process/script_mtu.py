@@ -1,15 +1,16 @@
 import argparse
 import logging
-import time
+import time 
 from pyics.utils import *
 from pyics.mtu import *
 from constants import *
-from tanksystem import MTUTankSystem
+from mtu_med import MTUMedSystem
 
+logging.basicConfig(filename = LOG, mode = 'w', format='[%(asctime)s][%(levelname)s][%(pathname)s-%(lineno)d] %(message)s', level = logging.DEBUG)
 
 def main(args):
     time.sleep(1)
-    mtu =  MTUTankSystem(args.ip, args.port)
+    mtu = MTUMedSystem(args.ip, args.port)
     mtu.get_dir(args.filename)
     mtu.create_task('mtu', args.period, args.duration)
     mtu.start()

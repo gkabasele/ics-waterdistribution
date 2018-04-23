@@ -1,122 +1,112 @@
 from pymodbus.client.sync import ModbusTcpClient
-from pyics.mty import MTU, ProcessRange
+from pyics.mtu import MTU, ProcessRange
 from constants import *
 
 class MTUMedSystem(MTU):
 
     def __init__(self, ip, port, client=ModbusTcpClient):
 
-        # approvisionning
-        self.a1 = 0
-        self.a2 = 0
-        self.a3 = 0
-
-        # first tank
-        self.v1 = False
-        self.v2 = False
-        self.m1 = False
-        self.m2 = False
-        self.t1 = 0
-        self.vt1 = False
+        self.varmap = {
         
-        # first silo
-        self.s1 = 0
-        self.vs1 = False
-
-        # second silo
-        self.s2 = 0
-        self.m2 = False
-        self.vs2 = False
-
-        # second tank (charcoal)
-        self.tc = 0
-        self.vtc = False
-
-        # wagon
-        self.we = False
-        self.wc = 0
-        self.ws = False
-        self.wo = False
-        self.wm = False
-
-        # final tank
-        self.tf = 0
-        self.vtf = False
+                            A1  : 0,             
+                            A2  : 0, 
+                            A3  : 0, 
+                            V1  : False, 
+                            V2  : False, 
+                            T1  : 0, 
+                            M1  : False, 
+                            VT1 : False,
+                            S1  : 0, 
+                            VS1 : False,
+                            S2  : 0,
+                            VS2 : False,
+                            M2  : False,         
+                            TC  : 0,
+                            VTC : False,
+                            WE  : False, 
+                            WC  : 0, 
+                            WM  : False,
+                            WO  : False,
+                            WS  : False, 
+                            TF  : 0,
+                            VTF : False
+        }
 
         super(MTUMedSystem, self).__init__(ip, port, client)
 
-    def main_loop(self, *args, **args):
-        for attr in vars(self):
-            setattr(self, attr, self.get_variable(attr.upper()))
+    def main_loop(self, *args, **kargs):
 
-            self.tank1_management()
-            if self.s2 == 0 :
-                self.wagon_management()
-            elif self.s2 == 20 :
-                if self.s1 > 0 :
-                    self.change_coil(VS1, True)
-                elif self.s1 == 0:
-                    self.change_coil(VS1, False)
+        for k,v in self.varmap.iteritems():
+            self.varmap[k] = self.get_variable(k)
 
-            if self.vtf:
-                self.change_coil(VTF, False)
+        if any( x is None for x in self.varmap.itervalues()):
+           return 
 
-            elif self.s2 == 60 : 
-                if self.m2:
-                    self.change_coil(M2, False)
-                    if self.tf < 60:
-                        self.change_coil(VTF, True)
-                else:
-                    self.change_coil(M2, True)
+        self.tank1_management()
+        if self.varmap[S2] == 0 :
+            self.wagon_management()
+        elif self.varmap[S2] == 20 :
+            if self.varmap[S1] > 0 :
+                self.change_coil(VS1, True)
+            elif self.varmap[S1] == 0:
+                self.change_coil(VS1, False)
+
+        if self.varmap[VTF]:
+            self.change_coil(VTF, False)
+
+        elif self.varmap[S2] == 60 : 
+            if self.varmap[M2]:
+                self.change_coil(M2, False)
+                if self.varmap[TF] < 60:
+                    self.change_coil(VTF, True)
+            else:
+                self.change_coil(M2, True)
 
 
     def tank1_management(self):
-        if self.t1 < 40:
-            if self.vt1:
+        if self.varmap[T1] < 40:
+            if self.varmap[VT1]:
                 self.change_coil(VT1, False)
 
-            if self.t1 >= 0 and self.t1 <20:
+            if self.varmap[T1] >= 0 and self.variables[T1] <20:
                 self.change_coil(V1, True)
                 self.change_coil(V2, False)
 
-            if self.t1 >= 20 :
+            if self.varmap[T1] >= 20 :
                 self.change_coil(V1, False)
                 self.change_coil(V2, True)
 
-        elif self.t1 == 40:
-            if self.v1:
+        elif self.varmap[T1] == 40:
+            if self.varmap[V1]:
                 self.change_coil(V1, False)
-            if self.v2:
+            if self.varmap[V2]:
                 self.change_coil(V2, False)                
             
-            if not self.m1: 
+            if not self.varmap[M1]: 
                 self.change_coil(M1, True)
-            if self.m1:
+            if self.varmap[M1]:
                 self.change_coil(M1, False)
-                if self.s1 < 40:
+                if self.varmap[S1] < 40:
                     self.change_coil(VT1, True)
 
 
     def wagon_management(self):
-        if self.ws:
-           if self.wc < 20:
+        if self.varmap[WS]:
+           if self.varmap[WC] < 20:
                self.change_coil(VTC, True)
-           elif self.wc == 20:
+           elif self.varmap[WC] == 20:
                self.change_coil(VTC, False)
                self.change_coil(WM, True)
-        elif self.we: 
-            if self.wc == 20:
+        elif self.varmap[WE]: 
+            if self.varmap[WC] == 20:
                self.change_coil(WO, True)
-            elif self.wc < 20:
+            elif self.varmap[WC] < 20:
                self.change_coil(WO, False)
                self.change_coil(WM, True)
 
-
-                
-
                 
     def change_coil(self, name, val):
-        setattr(self, name.lower(), val)
-        self.write_variable(name, getattr(self, name.lower()))
+        self.varmap[name] = val
+        self.write_variable(name, val)
 
 

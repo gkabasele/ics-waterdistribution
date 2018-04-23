@@ -59,7 +59,6 @@ varmap = {
         VTF : (CO,1)
         }
 
-
 # Store
 STORE = './variables'
 EXPORT_VAR ='./lplc_var'

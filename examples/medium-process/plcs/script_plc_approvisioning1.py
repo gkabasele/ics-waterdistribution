@@ -1,5 +1,6 @@
 import argparse
 import logging
+import sys
 from pyics.utils import *
 from pyics.plc import *
 #from constants import *
@@ -22,5 +23,6 @@ if __name__ == "__main__":
     parser.add_argument("--duration", dest="duration", type=int, default=60, action="store")
     parser.add_argument("--export", dest="filename", action="store")
     parser.add_argument("--create", dest="create_ex", action="store_true")
-    args = parser.parse_args()
+    args, unknown = parser.parse_known_args()
+    print(args)
     main(args)
