@@ -1,6 +1,10 @@
+import logging
 from pymodbus.client.sync import ModbusTcpClient
 from pyics.mtu import MTU, ProcessRange
 from constants import *
+
+
+logger = logging.getLogger(__name__)
 
 class MTUMedSystem(MTU):
 
@@ -41,8 +45,9 @@ class MTUMedSystem(MTU):
 
         if any( x is None for x in self.varmap.itervalues()):
            return 
-
+        
         self.tank1_management()
+
         if self.varmap[S2] == 0 :
             self.wagon_management()
         elif self.varmap[S2] == 20 :
@@ -68,13 +73,15 @@ class MTUMedSystem(MTU):
             if self.varmap[VT1]:
                 self.change_coil(VT1, False)
 
-            if self.varmap[T1] >= 0 and self.variables[T1] <20:
+            if self.varmap[T1] >= 0 and self.varmap[T1] <20:
                 self.change_coil(V1, True)
-                self.change_coil(V2, False)
+                if self.varmap[V2]:
+                    self.change_coil(V2, False)
 
             if self.varmap[T1] >= 20 :
-                self.change_coil(V1, False)
                 self.change_coil(V2, True)
+                if self.varmap[V1]:
+                    self.change_coil(V1, False)
 
         elif self.varmap[T1] == 40:
             if self.varmap[V1]:

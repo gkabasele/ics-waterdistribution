@@ -65,6 +65,6 @@ EXPORT_VAR ='./lplc_var'
 PLCS_DIR = './plcs'
 TEMPLATES_DIR = 'templates'
 PERIOD = 1
-DURATION = 60
+DURATION = 30
 
 LOG = "ics.log"

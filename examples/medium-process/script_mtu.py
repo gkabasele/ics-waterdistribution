@@ -1,12 +1,16 @@
 import argparse
 import logging
 import time 
+import os
 from pyics.utils import *
 from pyics.mtu import *
 from constants import *
 from mtu_med import MTUMedSystem
 
-logging.basicConfig(filename = LOG, mode = 'w', format='[%(asctime)s][%(levelname)s][%(pathname)s-%(lineno)d] %(message)s', level = logging.DEBUG)
+if os.path.exists(LOG):
+    os.remove(LOG)
+
+logging.basicConfig(filename = LOG, mode = 'w', format='[%(asctime)s][%(levelname)s][%(pathname)s-%(lineno)d] %(message)s', level = logging.INFO)
 
 def main(args):
     time.sleep(1)
