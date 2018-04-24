@@ -13,9 +13,11 @@ from constants import *
 
 class MediumProcess(ComponentProcess):
 
-    def __init__(self, env, store, name, *args, **kwargs):
+    def __init__(self, env, store, name, nb_round,*args, **kwargs):
 
         super(MediumProcess, self).__init__(env, store, name, *args, **kwargs)
+
+        self.nb_round = nb_round
 
         # approvisionning
         self.approvisioning1 = 50
@@ -79,7 +81,6 @@ class MediumProcess(ComponentProcess):
         print "(%d) %s is open, passing fluid to %s" % (self.env.now, attr_from, attr_to)
         tmp_from = getattr(self, attr_from)
         tmp_to = getattr(self, attr_to)
-        #setattr(self, attr_from, tmp_from - amount)
         setattr(self, attr_to, tmp_to + (max(0, min(tmp_from, amount))))
         setattr(self, attr_from, tmp_from - min(tmp_from, amount))
         self.set(attr_from, getattr(self, attr_from))
@@ -97,7 +98,7 @@ class MediumProcess(ComponentProcess):
 
         print "(%d) Staring physiscal process tank" % (self.env.now)
 
-        for i in range(8):
+        for i in range(self.nb_round):
             self.valve1 = self.get(V1, "b")
             if self.valve1:
                 self.pass_fluid(amount_fluid_passing, A1, T1)
@@ -176,7 +177,7 @@ class MediumProcess(ComponentProcess):
             self.set(A2, self.approvisioning2)
             self.set(TC, self.tankCharcoal)
 
-def start(store):
+def start(store, nb_round):
     env = simpy.rt.RealtimeEnvironment(factor=1)
-    phys_proc = (MediumProcess(env, store, "Medium Process"))
+    phys_proc = (MediumProcess(env, store, "Medium Process", nb_round))
     env.run()
