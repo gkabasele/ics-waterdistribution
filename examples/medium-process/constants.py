@@ -3,7 +3,6 @@ from pyics.utils import *
 # Variable Name
 A1 = "approvisioning1"
 A2 = "approvisioning2"
-A3 = "approvisioning3"
 
 V1 = "valve1"
 V2 = "valve2"
@@ -37,7 +36,6 @@ varmap = {
         
         A1  : (HR,1),             
         A2  : (HR,1), 
-        A3  : (HR,1), 
         V1  : (CO,1), 
         V2  : (CO,1), 
         T1  : (HR,1), 
@@ -65,6 +63,6 @@ EXPORT_VAR ='./lplc_var'
 PLCS_DIR = './plcs'
 TEMPLATES_DIR = 'templates'
 PERIOD = 1
-DURATION = 30
+DURATION = 75
 
 LOG = "ics.log"
