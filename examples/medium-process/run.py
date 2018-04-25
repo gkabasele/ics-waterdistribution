@@ -12,8 +12,8 @@ from constants import *
 logging.basicConfig(filename = LOG, mode = 'w', format='[%(asctime)s][%(levelname)s][%(pathname)s-%(lineno)d] %(message)s', level = logging.DEBUG)
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--create", dest="create_dir", action="store_true", desc="Create export directory for variable processes")
-parser.add_argument("--nb", dest="nb_round", type=int, default=5, action="store", desc="Number of iteration for the process execution") 
+parser.add_argument("--create", dest="create_dir", action="store_true", help="Create export directory for variable processes")
+parser.add_argument("--nb", dest="nb_round", type=int, default=5, action="store", help="Number of iteration for the process execution") 
 args = parser.parse_args()
 
 if os.path.exists(STORE):
