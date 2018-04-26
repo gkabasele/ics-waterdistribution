@@ -99,6 +99,7 @@ class MediumProcess(ComponentProcess):
         print "(%d) Staring physiscal process tank" % (self.env.now)
 
         for i in range(self.nb_round):
+            '''
             self.valve1 = self.get(V1, "b")
             if self.valve1:
                 self.pass_fluid(amount_fluid_passing, A1, T1)
@@ -133,18 +134,7 @@ class MediumProcess(ComponentProcess):
 
             self.wagonMoving = self.get(WM, "b")
             if self.wagonMoving:
-                print "(%d) moving the wagon" % (self.env.now)
-                if self.wagonEnd:
-                    self.wagonEnd = False
-                    self.wagonStart = True
-                    self.wagonMoving = False
-                elif self.wagonStart:
-                    self.wagonStart = False
-                    self.wagonEnd = True
-                    self.wagonMoving = False
-                self.set(WE, self.wagonEnd)
-                self.set(WS, self.wagonStart)
-                self.set(WM, self.wagonMoving)
+                self.moving_wagon()
 
             self.wagonlidOpen = self.get(WO, "b")
             self.wagonEnd = self.get(WE, "b")
@@ -164,9 +154,8 @@ class MediumProcess(ComponentProcess):
 
             self.valveTankFinal = self.get(VTF, "b")
             if self.valveTankFinal :
-                print "(%d) tank final is open, releasing %d of tank final" % (self.env.now, self.tankFinal)
-                self.tankFinal = 0
-                self.set(TF, self.tankFinal)
+                self.release_tank()        
+            '''
 
             print "(%d) Approvisionning A1 and A2, tankCharcoal" % (self.env.now)
             yield self.env.timeout(carcoal_dur)
@@ -176,6 +165,30 @@ class MediumProcess(ComponentProcess):
             self.set(A1, self.approvisioning1)
             self.set(A2, self.approvisioning2)
             self.set(TC, self.tankCharcoal)
+
+    def move_wagon(self):
+        print "(%d) moving the wagon" % (self.env.now)
+        if self.wagonEnd:
+            self.wagonEnd = False
+            self.wagonStart = True
+            self.wagonMoving = False
+        elif self.wagonStart:
+            self.wagonStart = False
+            self.wagonEnd = True
+            self.wagonMoving = False
+        self.set(WE, self.wagonEnd)
+        self.set(WS, self.wagonStart)
+        self.set(WM, self.wagonMoving)
+
+    def running_motor(self, name):
+        print "(%d) running motor %s" % (self.env.now, name)
+
+    def release_tank(self):
+        print "(%d) tank final is open, releasing %d of tank final" % (self.env.now, self.tankFinal)
+        self.tankFinal = 0
+        self.set(TF, self.tankFinal)
+
+
 
 def start(store, nb_round):
     env = simpy.rt.RealtimeEnvironment(factor=1)

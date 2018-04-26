@@ -124,8 +124,9 @@ class MTUMedSystem(MTU):
 
                 
     def change_coil(self, name, val):
-        self.varmap[name] = val
-        self.write_variable(name, val)
-        logger.info("Changing %s to %s" %(name, val)) 
+        if self.varmap[name] != val:
+            self.varmap[name] = val
+            self.write_variable(name, val)
+            logger.info("Changing %s to %s" %(name, val)) 
 
 

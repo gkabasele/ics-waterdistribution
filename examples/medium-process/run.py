@@ -1,11 +1,13 @@
 import shutil
 import os
+import time
 import medium_process
 import threading
 import argparse
 import subprocess
 import plc_generator
 import logging
+import store_watcher
 from constants import *
 
 
@@ -32,9 +34,9 @@ os.mkdir(PLCS_DIR)
 
 plc_generator.create_plc_scripts()
 
-t = threading.Thread(name='process', target=medium_process.start, args=(STORE, args.nb_round))
+#t = threading.Thread(name='process', target=medium_process.start, args=(STORE, args.nb_round))
+t = threading.Thread(name='process', target=store_watcher.start, args=(STORE, args.nb_round))
 t.start()
-
 
 processes = {}
 processes_output = {}
