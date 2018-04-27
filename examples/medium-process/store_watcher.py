@@ -69,7 +69,6 @@ def start(store, nb_round):
     observer.start()
 
     try:
-        print "Passing here"
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
