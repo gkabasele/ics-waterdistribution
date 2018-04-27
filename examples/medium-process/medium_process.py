@@ -13,11 +13,10 @@ from constants import *
 
 class MediumProcess(ComponentProcess):
 
-    def __init__(self, env, store, name, nb_round,*args, **kwargs):
+    def __init__(self, env, store, name, *args, **kwargs):
 
         super(MediumProcess, self).__init__(env, store, name, *args, **kwargs)
 
-        self.nb_round = nb_round
 
         # approvisionning
         self.approvisioning1 = 50
@@ -77,86 +76,11 @@ class MediumProcess(ComponentProcess):
         self.set(TF, self.tankFinal)
         self.set(VTF, self.valveTankFinal)
 
-    def pass_fluid(self, amount,attr_from, attr_to):
-        print "(%d) %s is open, passing fluid to %s" % (self.env.now, attr_from, attr_to)
-        tmp_from = getattr(self, attr_from)
-        tmp_to = getattr(self, attr_to)
-        setattr(self, attr_to, tmp_to + (max(0, min(tmp_from, amount))))
-        setattr(self, attr_from, tmp_from - min(tmp_from, amount))
-        self.set(attr_from, getattr(self, attr_from))
-        self.set(attr_to, getattr(self, attr_to))
-
     def computation(self, *args, **kwargs):
-
-        motor_dur = 3
-        flow_dur = 3
-        carcoal_dur = 4
-        carcoal_push_dur = 2
-        wagon_moving_dur = 2
-
-        amount_fluid_passing = 20
 
         print "(%d) Staring physiscal process tank" % (self.env.now)
 
-        for i in range(self.nb_round):
-            '''
-            self.valve1 = self.get(V1, "b")
-            if self.valve1:
-                self.pass_fluid(amount_fluid_passing, A1, T1)
-                yield self.env.timeout(flow_dur)
-                #Close the valve automatically
-
-            self.valve2 = self.get(V2, "b")
-            if self.valve2:
-               self.pass_fluid(amount_fluid_passing, A2, T1)
-               yield self.env.timeout(flow_dur)
-
-            self.motor1 = self.get(M1, "b")
-            if self.motor1:
-                print "(%d) running motor1" % (self.env.now)
-                yield self.env.timeout(motor_dur)
-
-            self.valveTank1 = self.get(VT1, "b")
-            if self.valveTank1:
-                self.pass_fluid(self.tank1, T1, S1)
-                yield self.env.timeout(flow_dur)
-
-            self.valveSilo1 = self.get(VS1, "b")
-            if self.valveSilo1:
-                self.pass_fluid(self.silo1, S1, S2)
-                yield self.env.timeout(flow_dur)
-
-            self.valveTankCharcoal = self.get(VTC, "b")
-            self.wagonStart = self.get(WS, "b")
-            if self.valveTankCharcoal and self.wagonStart:
-                self.pass_fluid(amount_fluid_passing, TC, WC)
-                yield self.env.timeout(flow_dur)
-
-            self.wagonMoving = self.get(WM, "b")
-            if self.wagonMoving:
-                self.moving_wagon()
-
-            self.wagonlidOpen = self.get(WO, "b")
-            self.wagonEnd = self.get(WE, "b")
-            if self.wagonlidOpen  and self.wagonEnd : 
-                self.pass_fluid(amount_fluid_passing, WC, S2) 
-                yield self.env.timeout(flow_dur)
-
-            self.motor2 = self.get(M2, "b")
-            if self.motor2:
-                print "(%d) running motor2" % (self.env.now)
-                yield  self.env.timeout(motor_dur)
-
-            self.valveSilo2 = self.get(VS2, "b")
-            if self.valveSilo2 :
-                self.pass_fluid(self.silo2, S2, TF)
-                yield self.env.timeout(flow_dur)
-
-            self.valveTankFinal = self.get(VTF, "b")
-            if self.valveTankFinal :
-                self.release_tank()        
-            '''
-
+        while True:
             print "(%d) Approvisionning A1 and A2, tankCharcoal" % (self.env.now)
             yield self.env.timeout(carcoal_dur)
             self.approvisioning1 += 2*amount_fluid_passing
@@ -168,6 +92,7 @@ class MediumProcess(ComponentProcess):
 
     def move_wagon(self):
         print "(%d) moving the wagon" % (self.env.now)
+        #yield self.env.timeout(wagon_moving_dur)
         if self.wagonEnd:
             self.wagonEnd = False
             self.wagonStart = True
@@ -182,13 +107,29 @@ class MediumProcess(ComponentProcess):
 
     def running_motor(self, name):
         print "(%d) running motor %s" % (self.env.now, name)
+        #yield self.env.timeout(motor_dur)
 
     def release_tank(self):
         print "(%d) tank final is open, releasing %d of tank final" % (self.env.now, self.tankFinal)
+        #yield self.env.timeout(flow_dur)
         self.tankFinal = 0
         self.set(TF, self.tankFinal)
 
+    def pass_fluid(self, amount,attr_from, attr_to):
+        print "(%d) %s is open, passing fluid to %s" % (self.env.now, attr_from, attr_to)
+        #yield self.env.timeout(flow_dur)
+        tmp_from = getattr(self, attr_from)
+        tmp_to = getattr(self, attr_to)
+        setattr(self, attr_to, tmp_to + (max(0, min(tmp_from, amount))))
+        setattr(self, attr_from, tmp_from - min(tmp_from, amount))
+        self.set(attr_from, getattr(self, attr_from))
+        self.set(attr_to, getattr(self, attr_to))
 
+    def empty_wagon(self, amount, attr):
+        print "(%d) [Error] emptying %s"  % (self.env.now, attr)
+        tmp = getattr(self, attr)
+        setattr(self, attr, tmp - min(tmp, amount)) 
+        self.set(attr, getattr(self, tmp))
 
 def start(store, nb_round):
     env = simpy.rt.RealtimeEnvironment(factor=1)

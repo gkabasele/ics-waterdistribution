@@ -19,14 +19,13 @@ class VarProcessHandler(FileSystemEventHandler):
         varname = str(event.src_path).replace(self.process.store.root +'/', '').encode('utf-8')
         #Check if it is a boolean value
         if varmap[varname][0] == CO:
-            print "Modification of variable %s" % (varname)
             do_something = self.process.get(varname, "b")
             if do_something:
                 if varname == V1:
-                    self.process.pass_fluid(20, A1, T1)
+                    self.process.pass_fluid(amount_fluid_passing, A1, T1)
 
                 elif varname == V2:
-                    self.process.pass_fluid(20, A2, T1)
+                    self.process.pass_fluid(amount_fluid_passing, A2, T1)
 
                 elif varname == M1:
                     self.process.running_motor(M1)
@@ -38,13 +37,16 @@ class VarProcessHandler(FileSystemEventHandler):
                     self.process.pass_fluid(self.process.silo1, S1, S2)
                     
                 elif varname == VTC: 
-                    self.process.pass_fluid(20, TC, WC)
+                    self.process.pass_fluid(amount_fluid_passing, TC, WC)
 
                 elif varname == WM:
                     self.process.move_wagon()
 
                 elif varname == WO:
-                    self.process.pass_fluid(20, WC, S2)
+                    if self.process.wagonStart:
+                        self.process.empty_wagon(amount_fluid_passing, WC)
+                    elif self.process.wagonEnd:
+                        self.process.pass_fluid(amount_fluid_passing, WC, S2)
 
                 elif varname == M2:
                     self.process.running_motor(M2)
@@ -57,8 +59,8 @@ class VarProcessHandler(FileSystemEventHandler):
 
 def start(store, nb_round):
     env = simpy.rt.RealtimeEnvironment(factor=1)
-    process = MediumProcess(env, store, "Medium Process", nb_round)
-    t = threading.Thread(name='medium', target=env.run)
+    process = MediumProcess(env, store, "Medium Process")
+    t = threading.Thread(name='medium', target=env.run, kwargs={'until':nb_round})
     t.start()
     handler = VarProcessHandler(process)
     observer = Observer()
@@ -67,9 +69,11 @@ def start(store, nb_round):
     observer.start()
 
     try:
+        print "Passing here"
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
+        print "Stopping observer"
         observer.stop()
 
     observer.join()

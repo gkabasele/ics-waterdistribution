@@ -57,6 +57,15 @@ varmap = {
         VTF : (CO,1)
         }
 
+# Action duration
+
+motor_dur = 3
+flow_dur = 3
+carcoal_dur = 4
+carcoal_push_dur = 2 
+wagon_moving_dur = 2
+amount_fluid_passing = 20
+
 # Store
 STORE = './variables'
 EXPORT_VAR ='./lplc_var'
