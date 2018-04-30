@@ -1,11 +1,15 @@
 import argparse
 import logging
 import sys
+import os
 from pyics.utils import *
 from pyics.plc import *
-#from constants import *
 
 print "Launching {{ name_plc }}"
+if os.path.exists("{{ name_plc }}.log"):
+    os.remove("{{ name_plc }}.log")
+
+logging.basicConfig(filename = "{{ plcs_log }}" + "/{{ name_plc }}.log", mode = 'w', format='[%(asctime)s][%(levelname)s][%(pathname)s-%(lineno)d] %(message)s', level = logging.INFO)
 
 def main(args):
     plc = PLC(args.ip, args.port, args.store, "plc-{{ name_plc }}", {{ name_plc }} = {{ variable_type }})

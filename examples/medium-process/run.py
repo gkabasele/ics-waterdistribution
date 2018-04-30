@@ -18,6 +18,10 @@ parser.add_argument("--create", dest="create_dir", action="store_true", help="Cr
 parser.add_argument("--nb", dest="nb_round", type=int, default=5, action="store", help="Number of iteration for the process execution") 
 args = parser.parse_args()
 
+if os.path.exists(PLCS_LOG):
+    shutil.rmtree(PLCS_LOG)
+
+
 if os.path.exists(STORE):
     shutil.rmtree(STORE)
 
@@ -31,6 +35,7 @@ if args.create_dir:
 
 os.mkdir(STORE)
 os.mkdir(PLCS_DIR)
+os.mkdir(PLCS_LOG)
 
 plc_generator.create_plc_scripts()
 
@@ -44,7 +49,7 @@ cre = "--create" if args.create_dir else ""
 
 for port,filename in enumerate(os.listdir(PLCS_DIR), 0):
     if filename.endswith(".py"):
-        proc = subprocess.Popen(["python", PLCS_DIR+"/"+filename, "--ip", "localhost", "--port", str(5020+port), "--store", STORE, "--duration", str(DURATION), "--export", EXPORT_VAR, cre], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc = subprocess.Popen(["python", PLCS_DIR+"/"+filename, "--ip", "localhost", "--port", str(5020+port), "--store", STORE, "--duration", str(DURATION),"--period", str(PLC_PERIOD) ,"--export", EXPORT_VAR, cre], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         processes[filename] = proc
 
 mtu_proc = subprocess.Popen(["python", "script_mtu.py", "--ip", "localhost", "--port", str(3000), "--duration", str(DURATION) , "--import", EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)

@@ -8,6 +8,8 @@ from pymodbus.datastore import ModbusSequentialDataBlock
 from pymodbus.datastore import ModbusSlaveContext, ModbusServerContext
 from pymodbus.exceptions import NoSuchSlaveException
 from pymodbus.pdu import ModbusExceptions as merror
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
 
 logger = logging.getLogger(__name__)
@@ -72,6 +74,25 @@ class KVModbusRequestHandler(ModbusConnectedRequestHandler):
             self.server.put_store(name, value)
         except KeyError:
             logger.debug("Variable %s doest not exist" % name)
+
+class VarPLCHandler(FileSystemEventHandler):
+
+    '''
+        Class to observe modification on process variable store
+    '''
+    
+    def __init__(self, plc):
+
+        self.plc = plc
+        super(VarPLCHandler, self).__init__()
+
+    def on_modified(self, event):
+        varname = str(event.src_path).replace(self.plc.store.root + '/', '').encode('utf-8')
+        logger.info("Modification of varname: %s" %varname )
+        if varname in self.variables:
+            logger.info("Updating variables for PLC %s" %self.plc.name)
+            self.plc.update_registers()
+
 
 
 class PLC(ModbusTcpServer, object):
@@ -221,6 +242,7 @@ class PLC(ModbusTcpServer, object):
             else:
                 val = self.get_store(k, float, 0)
             if val is not None:
+                logger.info("Updating registers")
                 self.set(k, val)
 
     def run(self, name, period, duration=None, *args, **kwargs):
@@ -233,6 +255,7 @@ class PLC(ModbusTcpServer, object):
         '''
         self.loop = PeriodicTask(name, period, self.update_registers, duration, self.shutdown, *args, **kwargs)
         self.loop.start()
+        
 
     def wait_end(self, server=False):
         if server:
@@ -241,3 +264,4 @@ class PLC(ModbusTcpServer, object):
 
     def stop(self):
         self.shutdown()
+        self.stop()

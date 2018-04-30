@@ -37,7 +37,10 @@ class VarProcessHandler(FileSystemEventHandler):
                     self.process.pass_fluid(self.process.silo1, S1, S2)
                     
                 elif varname == VTC: 
-                    self.process.pass_fluid(amount_fluid_passing, TC, WC)
+                    if self.process.wagonStart:
+                        self.process.pass_fluid(amount_fluid_passing, TC, WC)
+                    elif self.process.wagonEnd:
+                        print "[Error] Releasing tank charcoal for nothing"
 
                 elif varname == WM:
                     self.process.move_wagon()

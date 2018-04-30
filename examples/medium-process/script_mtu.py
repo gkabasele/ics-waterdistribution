@@ -24,7 +24,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--ip", dest="ip", default="localhost", action="store")
     parser.add_argument("--port", dest="port", default=3000, type=int, action="store")
-    parser.add_argument("--period", dest="period", type=int, default=1, action="store")
+    parser.add_argument("--period", dest="period", type=float, default=1, action="store")
     parser.add_argument("--duration", dest="duration", type=int, default=60, action="store")
     parser.add_argument("--import", dest="filename", action="store")
     args = parser.parse_args()
