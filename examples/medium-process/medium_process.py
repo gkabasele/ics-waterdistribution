@@ -129,7 +129,7 @@ class MediumProcess(ComponentProcess):
         print "(%d) [Error] emptying %s"  % (self.env.now, attr)
         tmp = getattr(self, attr)
         setattr(self, attr, tmp - min(tmp, amount)) 
-        self.set(attr, getattr(self, tmp))
+        self.set(attr, getattr(self, attr))
 
 def start(store, nb_round):
     env = simpy.rt.RealtimeEnvironment(factor=1)
