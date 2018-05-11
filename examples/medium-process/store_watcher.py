@@ -70,13 +70,18 @@ def start(store, nb_round):
     observer.schedule(handler, path=store, recursive=True)
     print "Starting observer"
     observer.start()
+    time.sleep(DURATION)
+    print "Stopping observer"
+    observer.stop()
+    
 
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        print "Stopping observer"
-        observer.stop()
+    #try:
+    #    while True:
+    #        time.sleep(1)
+    #        print "Doing one run"
+    #except KeyboardInterrupt:
+    #    print "Stopping observer"
+    #    observer.stop()
 
-    observer.join()
-    t.join()
+    #observer.join()
+    #t.join()
