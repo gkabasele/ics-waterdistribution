@@ -73,7 +73,7 @@ PLCS_DIR = './plcs'
 TEMPLATES_DIR = 'templates'
 PLC_PERIOD = 0.05
 MTU_PERIOD = 1
-DURATION = 30
+DURATION = 120 
 
 LOG = "ics.log"
 PLCS_LOG = "plcs_log"
