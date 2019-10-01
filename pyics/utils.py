@@ -28,6 +28,7 @@ class PeriodicTask(threading.Thread):
         self.period = period
         self.duration = duration
         self.task = task
+        # Function to execute just before stopping the task
         self.end = end
         self.endargs = endargs
         self.args = args
@@ -44,7 +45,7 @@ class PeriodicTask(threading.Thread):
         start_time = time.time()
         while True:
             current_time = time.time()
-            if self.duration and (current_time - start_time) >= self.duration:
+            if self.duration is not None and (current_time - start_time) >= self.duration:
                 break
             self.task(*self.args, **self.kwargs)
             time.sleep(next(g))

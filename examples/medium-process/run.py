@@ -17,6 +17,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--create", dest="create_dir", action="store_true", help="Create export directory for variable processes")
 parser.add_argument("--nb", dest="nb_round", type=int, default=5, action="store", help="Number of iteration for the process execution") 
 
+parser.add_argument("--export_process", dest="export_process", action="store", help="File to see state of process variable over time")
 args = parser.parse_args()
 
 if os.path.exists(PLCS_LOG):
@@ -53,7 +54,7 @@ for port,filename in enumerate(os.listdir(PLCS_DIR), 0):
         proc = subprocess.Popen(["python", PLCS_DIR+"/"+filename, "--ip", "localhost", "--port", str(5020+port), "--store", STORE, "--duration", str(args.nb_round),"--period", str(PLC_PERIOD) ,"--export", EXPORT_VAR, cre], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         processes[filename] = proc
 
-mtu_proc = subprocess.Popen(["python", "script_mtu.py", "--ip", "localhost", "--port", str(3000), "--duration", str(args.nb_round) , "--import", EXPORT_VAR], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+mtu_proc = subprocess.Popen(["python", "script_mtu.py", "--ip", "localhost", "--port", str(3000), "--duration", str(args.nb_round) , "--import", EXPORT_VAR, "--export", args.export_process], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 (mtu_out, mtu_err) = mtu_proc.communicate()
 
 for k,v in processes.iteritems():
@@ -61,7 +62,7 @@ for k,v in processes.iteritems():
     processes_output[k] = (proc_out, proc_err)
     print proc_out
     print proc_err
-    v.wait()
+    #v.wait()
 
 print mtu_err
 mtu_proc.wait()

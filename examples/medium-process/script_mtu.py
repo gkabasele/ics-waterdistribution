@@ -14,11 +14,12 @@ logging.basicConfig(filename = LOG, mode = 'w', format='[%(asctime)s][%(levelnam
 
 def main(args):
     time.sleep(1)
-    mtu = MTUMedSystem(args.ip, args.port)
-    mtu.get_dir(args.filename)
-    mtu.create_task('mtu', args.period, args.duration)
-    mtu.start()
-    mtu.wait_end()
+    with open(args.export_file, "w") as fn:
+        mtu = MTUMedSystem(args.ip, args.port, fn)
+        mtu.get_dir(args.filename)
+        mtu.create_task('mtu', args.period, args.duration)
+        mtu.start()
+        mtu.wait_end()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -27,5 +28,6 @@ if __name__ == "__main__":
     parser.add_argument("--period", dest="period", type=float, default=1, action="store")
     parser.add_argument("--duration", dest="duration", type=int, default=60, action="store")
     parser.add_argument("--import", dest="filename", action="store")
+    parser.add_argument("--export", dest="export_file", action="store")
     args = parser.parse_args()
     main(args)

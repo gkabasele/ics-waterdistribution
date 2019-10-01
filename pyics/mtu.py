@@ -130,7 +130,7 @@ class MTU(object):
     def write_variable(self, name, value):
         try:
             var = self.variables[name]
-            if var.get_type() == CO : 
+            if var.get_type() == CO :
                 self.plcs[name].write_coil(var.get_addr(), value)
             elif var.get_type() == HR:
                 self.plcs[name].write_register(var.get_addr(), value)
@@ -145,7 +145,7 @@ class MTU(object):
 
     def start(self):
         self.task.start()
-    
+
     def wait_end(self):
         self.task.join()
 
@@ -155,4 +155,3 @@ class MTU(object):
 
     def main_loop(self, *args, **kwargs):
         raise NotImplementedError
-    

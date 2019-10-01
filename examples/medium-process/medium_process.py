@@ -94,7 +94,7 @@ class MediumProcess(ComponentProcess):
 
         while True:
             print "(%d) Approvisionning A1 and A2, tankCharcoal" % (self.env.now)
-            yield self.env.timeout(carcoal_dur)
+            yield self.env.timeout(quick_dur)
             self.approvisioning1.value += 2*amount_fluid_passing
             self.approvisioning2.value += 2*amount_fluid_passing
             self.tankCharcoal.value += 2*amount_fluid_passing

@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from pymodbus.client.sync import ModbusTcpClient
 from pyics.mtu import MTU, ProcessRange
 from constants import *
@@ -8,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 class MTUMedSystem(MTU):
 
-    def __init__(self, ip, port, client=ModbusTcpClient):
+    def __init__(self, ip, port, export_file, client=ModbusTcpClient):
 
         self.varmap = {
         
@@ -35,6 +36,8 @@ class MTUMedSystem(MTU):
                             VTF : False
         }
 
+        self.export_file = export_file
+
         self.running_m1 = False
         self.running_m2 = False
         self.emptying_t1 = False
@@ -49,6 +52,12 @@ class MTUMedSystem(MTU):
             self.varmap[k] = self.get_variable(k)
             
         logger.info("%s" % self.varmap) 
+        self.export_file.write("[{}] {},emptyt1:{},emptys2:{},runm1:{},runm2:{}\n".format(datetime.now(),
+                                                                                          self.varmap,
+                                                                                          self.emptying_t1,
+                                                                                          self.emptying_s2,
+                                                                                          self.running_m1,
+                                                                                          self.running_m2))
 
         if any( x is None for x in self.varmap.itervalues()):
            return 

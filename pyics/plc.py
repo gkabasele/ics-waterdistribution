@@ -1,5 +1,6 @@
 import logging
 import traceback
+import time
 from utils import CO, HR, DI, IR, registers_type, PeriodicTask
 from simplekv.fs import FilesystemStore
 from pymodbus.server.sync import ModbusTcpServer, ModbusConnectedRequestHandler
@@ -120,6 +121,7 @@ class PLC(ModbusTcpServer, object):
         self.ip = ip
         self.port = port
         self.name = name
+        self.duration = None
         logger.info("Creating a PLC server %s:%d" % (ip, port))
         super(PLC, self).__init__(context, identity=identity, address=(ip, port), handler=handler)
 
@@ -236,6 +238,7 @@ class PLC(ModbusTcpServer, object):
         ''' Update variable according to the sensor
             :return:
         '''
+        logger.info("Attempting registers update")
         for k, v in self.variables.iteritems():
             if v.get_type() == CO:
                 val = int(self.get_store(k, 'b'))
@@ -254,12 +257,20 @@ class PLC(ModbusTcpServer, object):
             :return:
         '''
         self.loop = PeriodicTask(name, period, self.update_registers, duration, self.shutdown, *args, **kwargs)
+        self.duration = duration
         self.loop.start()
         
 
     def wait_end(self, server=False):
         if server:
-            self.serve_forever()
+            if self.duration is None:
+                self.serve_forever()
+            else:
+                current_time = time.time()
+                end_time = current_time + self.duration
+
+                while current_time <= end_time:
+                    self.handle_request()
         self.loop.join()
 
     def stop(self):

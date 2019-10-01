@@ -59,6 +59,7 @@ varmap = {
 
 # Action duration
 
+quick_dur = 1
 motor_dur = 3
 flow_dur = 3
 carcoal_dur = 4
@@ -73,7 +74,7 @@ PLCS_DIR = './plcs'
 TEMPLATES_DIR = 'templates'
 PLC_PERIOD = 0.05
 MTU_PERIOD = 1
-DURATION = 120 
+DURATION = 310 
 
 LOG = "ics.log"
 PLCS_LOG = "plcs_log"
