@@ -10,7 +10,7 @@ from mtu_med import MTUMedSystem
 if os.path.exists(LOG):
     os.remove(LOG)
 
-logging.basicConfig(filename = LOG, mode = 'w', format='[%(asctime)s][%(levelname)s][%(pathname)s-%(lineno)d] %(message)s', level = logging.INFO)
+logging.basicConfig(filename = LOG, mode = 'w', format='[%(asctime)s][%(levelname)s][%(pathname)s-%(lineno)d] %(message)s', level = logging.DEBUG)
 
 def main(args):
     time.sleep(1)

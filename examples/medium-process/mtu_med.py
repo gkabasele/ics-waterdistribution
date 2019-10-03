@@ -43,6 +43,8 @@ class MTUMedSystem(MTU):
         self.emptying_t1 = False
         self.emptying_s2 = False
 
+        self.emptying_tf = False
+
         super(MTUMedSystem, self).__init__(ip, port, client)
 
     def main_loop(self, *args, **kargs):
@@ -52,18 +54,36 @@ class MTUMedSystem(MTU):
             self.varmap[k] = self.get_variable(k)
             
         logger.info("%s" % self.varmap) 
-        self.export_file.write("[{}] {},emptyt1:{},emptys2:{},runm1:{},runm2:{}\n".format(datetime.now(),
-                                                                                          self.varmap,
-                                                                                          self.emptying_t1,
-                                                                                          self.emptying_s2,
-                                                                                          self.running_m1,
-                                                                                          self.running_m2))
+        msg = "[{}] {}, e1:{}, e2:{}, rm1:{}, rm2:{}, ef:{}\n\n".format(datetime.now(),
+                                                                        self.varmap,
+                                                                        self.emptying_t1,
+                                                                        self.emptying_s2,
+                                                                        self.running_m1,
+                                                                        self.running_m2,
+                                                                        self.emptying_tf)
+                            
+        self.export_file.write(msg)
 
-        if any( x is None for x in self.varmap.itervalues()):
+        if any(x is None for x in self.varmap.itervalues()):
            return 
         
         self.tank1_management()
         self.wagon_management()
+
+        if self.varmap[TF] < 60:
+
+            if self.varmap[TF] == 0: 
+                self.emptying_tf = False
+
+            if self.varmap[VTF] and not self.emptying_tf:
+                if self.varmap[VTF]:
+                    self.change_coil(VTF,False)
+
+        elif self.varmap[TF] == 60:
+            self.change_coil(VTF, True)
+            self.emptying_s2 = False
+            self.running_m2 = False
+            self.emptying_tf = True
 
         if self.varmap[S2] < 20 and not self.emptying_s2:
             if self.varmap[VS2]:
@@ -72,15 +92,15 @@ class MTUMedSystem(MTU):
                 self.change_coil(M2, False)
 
         elif self.varmap[S2] == 20 :
-            if self.varmap[S1] == 40 :
+            if self.varmap[S1] == 40:
                 self.change_coil(VS1, True)
         
-        elif self.varmap[S2] == 60 : 
+        elif self.varmap[S2] == 60 :
             if self.varmap[S1] == 0:
                 self.change_coil(VS1, False)
 
             if self.varmap[M2]:
-                if self.varmap[TF] < 60:
+                if self.varmap[TF] < 60 and not self.emptying_tf:
                     self.change_coil(M2, False)
                     self.change_coil(VS2, True)
                     self.emptying_s2 = True
@@ -88,16 +108,9 @@ class MTUMedSystem(MTU):
                 if not self.running_m2:
                     self.change_coil(M2, True)
                     self.running_m2 = True
+                else:
+                    self.change_coil(M2, False)
         
-        if self.varmap[TF] < 60:
-            if self.varmap[VTF]:
-                self.change_coil(VTF,False)
-
-        elif self.varmap[TF] == 60:
-            self.change_coil(VTF, True)
-            self.running_m2 = False
-            self.emptying_s2 = False
-
 
     def tank1_management(self):
         if self.varmap[T1] < 40 and not self.emptying_t1:

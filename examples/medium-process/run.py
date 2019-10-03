@@ -64,7 +64,14 @@ for k,v in processes.iteritems():
     print proc_err
     #v.wait()
 
-print mtu_err
-mtu_proc.wait()
+#mtu_proc.wait()
 t.join()
+print mtu_out
+print mtu_err
+
+for k, v in processes_output.items():
+    out, err = v
+    print "{}".format(k)
+    print out
+    print err
 

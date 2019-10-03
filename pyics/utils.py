@@ -1,5 +1,7 @@
 import threading
+import sys
 import time
+from traceback import print_exc
 
 HR = "h"
 CO = "c"
@@ -20,7 +22,7 @@ registers_type = {DI: 2, IR: 4, HR: 3, CO: 1}
 
 class PeriodicTask(threading.Thread):
     # period in second
-    def __init__(self, name, period, task, duration=None, end=None,
+    def __init__(self, name, period, task, logger=None, duration=None, end=None,
                  endargs=None, *args, **kwargs):
 
         threading.Thread.__init__(self)
@@ -33,6 +35,7 @@ class PeriodicTask(threading.Thread):
         self.endargs = endargs
         self.args = args
         self.kwargs = kwargs
+        self.logger = logger
 
     def do_every(self):
         def g_tick():
@@ -47,7 +50,11 @@ class PeriodicTask(threading.Thread):
             current_time = time.time()
             if self.duration is not None and (current_time - start_time) >= self.duration:
                 break
-            self.task(*self.args, **self.kwargs)
+            try:
+                self.task(*self.args, **self.kwargs)
+            except Exception:
+                if self.logger is not None:
+                    self.logger.info(print_exc())
             time.sleep(next(g))
 
         if self.end is not None:

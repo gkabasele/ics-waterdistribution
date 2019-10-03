@@ -9,7 +9,7 @@ from constants import *
 
 class VarProcessHandler(FileSystemEventHandler):
 
-    def __init__(self,process ):
+    def __init__(self, process):
         self.process = process
 
         super(VarProcessHandler, self).__init__()
@@ -20,25 +20,26 @@ class VarProcessHandler(FileSystemEventHandler):
         #Check if it is a boolean value
         if varmap[varname][0] == CO:
             do_something = self.process.get(varname, "b")
+            self.process.lock.acquire()
             if do_something:
                 if varname == V1:
-                    self.process.pass_fluid(amount_fluid_passing, A1, T1)
+                    self.process.pass_fluid(V1, A1, T1)
 
                 elif varname == V2:
-                    self.process.pass_fluid(amount_fluid_passing, A2, T1)
+                    self.process.pass_fluid(V2, A2, T1)
 
                 elif varname == M1:
                     self.process.running_motor(M1)
 
                 elif varname == VT1:
-                    self.process.pass_fluid(self.process.tank1.value, T1, S1)
+                    self.process.pass_fluid(VT1, T1, S1)
 
                 elif varname == VS1:
-                    self.process.pass_fluid(self.process.silo1.value, S1, S2)
-                    
-                elif varname == VTC: 
+                    self.process.pass_fluid(VS1, S1, S2)
+
+                elif varname == VTC:
                     if self.process.wagonStart:
-                        self.process.pass_fluid(amount_fluid_passing, TC, WC)
+                        self.process.pass_fluid(VTC, TC, WC)
                     elif self.process.wagonEnd:
                         print "[Error] Releasing tank charcoal for nothing"
 
@@ -47,22 +48,24 @@ class VarProcessHandler(FileSystemEventHandler):
 
                 elif varname == WO:
                     if self.process.wagonStart:
-                        self.process.empty_wagon(amount_fluid_passing, WC)
+                        self.process.empty_wagon(WC)
                     elif self.process.wagonEnd:
-                        self.process.pass_fluid(amount_fluid_passing, WC, S2)
+                        self.process.pass_fluid(WO, WC, S2)
 
                 elif varname == M2:
                     self.process.running_motor(M2)
 
                 elif varname == VS2:
-                    self.process.pass_fluid(self.process.silo2.value, S2, TF)
-                    
+                    self.process.pass_fluid(VS2, S2, TF)
+
                 elif varname == VTF:
-                    self.process.release_tank()
+                    self.process.release_tank(VTF, TF)
+            self.process.lock.release()
 
 def start(store, nb_round):
     env = simpy.rt.RealtimeEnvironment(factor=1)
-    process = MediumProcess(env, store, "Medium Process")
+    lock = threading.Lock()
+    process = MediumProcess(env, store, "Medium Process",lock)
     t = threading.Thread(name='medium', target=env.run, kwargs={'until':nb_round})
     t.start()
     handler = VarProcessHandler(process)
@@ -70,18 +73,7 @@ def start(store, nb_round):
     observer.schedule(handler, path=store, recursive=True)
     print "Starting observer"
     observer.start()
-    time.sleep(DURATION)
+    #time.sleep(DURATION)
+    time.sleep(nb_round+10)
     print "Stopping observer"
     observer.stop()
-    
-
-    #try:
-    #    while True:
-    #        time.sleep(1)
-    #        print "Doing one run"
-    #except KeyboardInterrupt:
-    #    print "Stopping observer"
-    #    observer.stop()
-
-    #observer.join()
-    #t.join()

@@ -10,16 +10,18 @@ logger = logging.getLogger(__name__)
 
 class ComponentProcess(object):
 
-    def __init__(self, env, store, name, *args, **kwargs):
+    def __init__(self, env, store, name, lock, *args, **kwargs):
 
         ''' Physical component of an industrial control system
 
             :param env: environment for the process simulation
             :param store: location of the store to set processes variables
             :param name: the name of the component
+            :param lock: thread lock
         '''
         self.name = name
         self.store = FilesystemStore(store)
+        self.lock = lock
 
         self.env = env
         self.action = env.process(self.computation(args, kwargs))
@@ -47,7 +49,7 @@ class ComponentProcess(object):
             if val == "True" or val == "False":
                 return val == "True"
             else:
-                raise TypeError
+                raise TypeError("Expected boolean value, got: {}".format(val))
         return typeobj(self.store.get(name))
 
     def set(self, name, value):
