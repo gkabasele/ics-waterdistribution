@@ -1,6 +1,7 @@
 import argparse
 import pickle
 import re
+import pdb
 from datetime import datetime
 from ast import literal_eval
 
@@ -18,14 +19,18 @@ def main(inname, outname):
 
     with open(inname, "r") as fname:
         for line in fname:
+            if line == "\n":
+                continue
             res = reg.match(line).groups()
             if res is not None:
                 timestamp = res[TS].replace("[", "").replace("]","")
                 ts = datetime.strptime(timestamp, dateformat)
-                d = res[DICT]
-                state = literal_eval(d)
-                state['timestamp'] = ts
-                states.append(state)
+                if 'None' not in line:
+                    d = res[DICT]
+                    state = literal_eval(d)
+                    state['timestamp'] = ts
+                    states.append(state)
+
 
     with open(outname, "wb") as fname:
         pickle.dump(states, fname)

@@ -51,10 +51,10 @@ cre = "--create" if args.create_dir else ""
 
 for port,filename in enumerate(os.listdir(PLCS_DIR), 0):
     if filename.endswith(".py"):
-        proc = subprocess.Popen(["python", PLCS_DIR+"/"+filename, "--ip", "localhost", "--port", str(5020+port), "--store", STORE, "--duration", str(args.nb_round),"--period", str(PLC_PERIOD) ,"--export", EXPORT_VAR, cre], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc = subprocess.Popen(["python", PLCS_DIR+"/"+filename, "--ip", "127.0.0.1", "--port", str(5020+port), "--store", STORE, "--duration", str(args.nb_round),"--period", str(PLC_PERIOD) ,"--export", EXPORT_VAR, cre], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         processes[filename] = proc
 
-mtu_proc = subprocess.Popen(["python", "script_mtu.py", "--ip", "localhost", "--port", str(3000), "--duration", str(args.nb_round) , "--import", EXPORT_VAR, "--export", args.export_process], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+mtu_proc = subprocess.Popen(["python", "script_mtu.py", "--ip", "127.0.0.1", "--port", str(3000), "--duration", str(args.nb_round) , "--import", EXPORT_VAR, "--export", args.export_process], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 (mtu_out, mtu_err) = mtu_proc.communicate()
 
 for k,v in processes.iteritems():

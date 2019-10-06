@@ -21,8 +21,8 @@ class Container():
 
         amount = min(self.value, self.step)
         self.value = max(self.value - self.step, 0)
-        other.value += amount
-        
+        other.value = min(other.value + amount, other.limit)
+
     def empty(self, name=None, now=None):
         if now is not None:
             print("({} Emptying {}".format(now, name))

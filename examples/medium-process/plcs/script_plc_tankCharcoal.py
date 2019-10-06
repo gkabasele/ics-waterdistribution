@@ -20,7 +20,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--ip", dest="ip", default="localhost", action="store")
+    parser.add_argument("--ip", dest="ip", default="127.0.0.1", action="store")
     parser.add_argument("--port", dest="port", type=int, action="store")
     parser.add_argument("--store", dest="store", action="store")
     parser.add_argument("--period", dest="period", type=float, default=1, action="store")
