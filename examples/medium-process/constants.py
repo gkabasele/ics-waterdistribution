@@ -1,5 +1,7 @@
 from pyics.utils import *
 
+TS = "timestamp"
+
 # Variable Name
 A1 = "approvisioning1"
 A2 = "approvisioning2"
@@ -55,6 +57,31 @@ varmap = {
         WS  : (CO,1), 
         TF  : (HR,1),
         VTF : (CO,1)
+        }
+
+# Limit value
+limitmap = {
+        A1  : [0, 500],             
+        A2  : [0, 500], 
+        V1  : [1, 2], 
+        V2  : [1, 2], 
+        T1  : [0, 40], 
+        M1  : [1, 2], 
+        VT1 : [1, 2],
+        S1  : [0, 40], 
+        VS1 : [1, 2],
+        S2  : [0, 20, 60],
+        VS2 : [1, 2],
+        M2  : [1, 2],         
+        TC  : [0, 500],
+        VTC : [1, 2],
+        WE  : [1, 2], 
+        WC  : [0, 20], 
+        WM  : [1, 2],
+        WO  : [1, 2],
+        WS  : [1, 2], 
+        TF  : [0, 60],
+        VTF : [1, 2]
         }
 
 # Action duration

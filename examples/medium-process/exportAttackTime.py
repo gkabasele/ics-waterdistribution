@@ -1,9 +1,9 @@
 import re
-import yaml
-import pdb
-
-from datetime import datetime, timedelta
 from ast import literal_eval
+import pdb
+from datetime import datetime, timedelta
+import constants
+import yaml
 
 TS = 0
 DICT = 2
@@ -25,6 +25,11 @@ out_overflow_invariant = "./overflow_atk_time_inv.yml"
 out_overflow_time = "./overflow_atk_time_time.yml"
 #out_overflow = "./overflow_export.time.txt"
 
+COUNT = "count"
+VARS = "vars"
+VAR = "var"
+FROM = "from"
+TO = "to"
 
 def update_attack_time(ts, start, end, attack_time):
 
@@ -90,18 +95,37 @@ def update_last_value(old, new, crit_value):
     else:
         return old
 
+def in_between(value, limit1, limit2):
+    if limit1 > limit2:
+        return limit2 < value and value < limit1
+    else:
+        return limit1 < value and value < limit2
+
 def export_attack_time(infile, outfile):
     reg = re.compile(regex)
     with open(infile, "r") as fname:
-        t1 = None
-        s1 = None
-        vt1 = None
-        v1 = None
-        v2 = None
-        impact_s1t1 = False
-        impact_v1 = False
-        impact_v2 = False
-        n_malicious_trans = 0
+
+        last = {k : None for k in constants.varmap}
+        impacts = {k : False for k in constants.varmap}
+
+        #(from, to, in_transition)
+        cond = {
+            constants.S2 : (20, 60, False),
+            constants.WC : (20, 0, False),
+            constants.TF : (0, 60, False),
+            constants.WS : (1, 2, False),
+            constants.WE : (2, 1, False),
+            constants.WO : (1, 2, False),
+            constants.M2 : (1, 2, False),
+            constants.V1 : (1, 2, False),
+            constants.V2 : (1, 2, False),
+            constants.M1 : (1, 2, False),
+            constants.VS1: (1, 2, False),
+            constants.VS2: (1, 2, False),
+            constants.VTF: (1, 2, False),
+            constants.VTC: (1, 2, False)
+            }
+
         mapping = {}
         for line in fname:
             if line == "\n":
@@ -116,38 +140,66 @@ def export_attack_time(infile, outfile):
                     state = literal_eval(d)
                     state["timestamp"] = ts
 
-                mapping[ts] = n_malicious_trans
+                mapping[ts] = {COUNT: 0, VARS: []}
 
-                if t1 is not None:
-                    if (((vt1 == 2 and state['valveTank1'] == 1) or
-                         (vt1 == 1 and state['valveTank1'] == 2)) and
-                            state['silo1'] >= 5 and state['silo1'] <= 35 and
-                            state['tank1'] >= 5 and state['tank1'] <= 35 and
-                            state['valve1'] == 1 and state['valve2'] == 1):
-                        mapping[ts] = mapping[ts]+1
-                        impact_s1t1 = True
-                        impact_v1 = True
-                        impact_v2 = True
+                if last[constants.T1] is not None:
+                    for k in cond.keys():
+                        if impacts[k] and last[k] == cond[k][0]:
+                            # Represent the variable that take longer time
+                            # staying in the same value. The transition occuring when the
+                            # value change is malicious because it is late
+                            if (in_between(state[k], cond[k][0], cond[k][1]) and
+                                    not cond[k][2]):
+                                mapping[ts][COUNT] = mapping[ts][COUNT]+1
+                                trans = {VAR: k, FROM: last[k], TO: state[k]}
+                                mapping[ts][VARS].append(trans)
+                                cond[k] = (cond[k][0], cond[k][1], True)
 
-                    if (s1 == 0 and state['silo1'] == 40 and
-                            t1 == 40 and state['tank1'] == 0) and impact_s1t1:
-                        #Two transition are impacted
-                        mapping[ts] = mapping[ts]+2
-                        impact_s1t1 = False
+                            if state[k] == cond[k][1]:
+                                mapping[ts][COUNT] = mapping[ts][COUNT]+1
+                                trans = {VAR: k, FROM: last[k], TO: state[k]}
+                                mapping[ts][VARS].append(trans)
+                                impacts[k] = False
+                                cond[k] = (cond[k][0], cond[k][1], False)
 
-                    if v1 == 1 and state['valve1'] == 2 and impact_v1:
-                        mapping[ts] = mapping[ts]+1
-                        impact_v1 = False
+                    # Full run of emptying tank
+                    if (last[constants.S1] == 0 and state[constants.S1] == 40 and
+                            last[constants.T1] == 40 and state[constants.T1] == 0 and
+                            impacts[constants.S1] and impacts[constants.T1]):
 
-                    if v2 == 1 and state['valve2'] == 2 and impact_v2:
-                        mapping[ts] = mapping[ts]+1
-                        impact_v2 = False
+                        #Two transitions are impacted
+                        mapping[ts][COUNT] = mapping[ts][COUNT]+2
+                        trans = {VAR: constants.S1, FROM: last[constants.S1],
+                                 TO: state[constants.S1]}
+                        mapping[ts][VARS].append(trans)
+                        trans = {VAR: constants.T1, FROM: last[constants.T1],
+                                 TO: state[constants.T1]}
+                        mapping[ts][VARS].append(trans)
+                        impacts[constants.S1] = False
+                        impacts[constants.T1] = False
 
-                t1 = update_last_value(t1, state['tank1'], [0, 40])
-                s1 = update_last_value(s1, state['silo1'], [0, 40])
-                vt1 = update_last_value(vt1, state['valveTank1'], [1, 2])
-                v1 = update_last_value(v1, state['valve1'], [1, 2])
-                v2 = update_last_value(v2, state['valve2'], [1, 2])
+                    if ((last[constants.VT1] == 2 and state[constants.VT1] == 1) and
+                            state[constants.S1] >= 5 and state[constants.S1] <= 35 and
+                            state[constants.T1] >= 5 and state[constants.T1] <= 35 and
+                            state[constants.V1] == 1 and state[constants.V2] == 1):
+                        mapping[ts][COUNT] = mapping[ts][COUNT]+1
+                        trans = {VAR: constants.VT1, FROM: last[constants.VT1],
+                                 TO: state[constants.VT1]}
+                        mapping[ts][VARS].append(trans)
+
+                        for k in impacts.keys():
+                            impacts[k] = True
+
+                    if (last[constants.VT1] == 1 and state[constants.VT1] == 2 and
+                            impacts[constants.S1] and impacts[constants.T1]):
+                        mapping[ts][COUNT] = mapping[ts][COUNT]+1
+                        trans = {VAR: constants.VT1, FROM: last[constants.VT1],
+                                 TO: state[constants.VT1]}
+                        mapping[ts][VARS].append(trans)
+
+                for k in last.keys():
+                    last[k] = update_last_value(last[k], state[k],
+                                                constants.limitmap[k])
 
         with open(outfile, "w+") as outfname:
             yaml.dump(mapping, outfname, default_flow_style=False)
