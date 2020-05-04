@@ -47,6 +47,7 @@ def update_attack_time(ts, start, end, attack_time):
 def export_attack_invariant(infile, outfile, export_overflow):
     reg = re.compile(regex)
     with open(infile, "r") as fname:
+        # sd = slowDown, of = overFlow
         sd_atk = []
         of_atk = []
         sd_atk_start = None
