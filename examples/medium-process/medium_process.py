@@ -1,4 +1,5 @@
 import os
+import random
 import simpy
 import simpy.rt
 
@@ -7,26 +8,38 @@ from pyics.utils import *
 from constants import *
 
 
+
 class Container():
 
-    def __init__(self, value, step, limit=0):
+    def __init__(self, value, speed, limit=0):
         self.value = value
-        self.step = step
+        self.speed = speed
+        self.speed_index = 0
         self.limit = limit
 
     def transfer(self, other, src=None, dst=None, now=None):
         if now is not None:
             print("({}) Tranferring from {} to {}".format(now,
                                                           src, dst))
+        amount = min(self.value, self.speed[self.speed_index])
+        self.value = max(self.value - amount, 0)
+        if other.value + amount > other.limit:
+            raise ValueError("Overflow")
 
-        amount = min(self.value, self.step)
-        self.value = max(self.value - self.step, 0)
         other.value = min(other.value + amount, other.limit)
+        
+
+        if self.value == 0:
+            self.speed_index = (self.speed_index + 1) % len(self.speed)
 
     def empty(self, name=None, now=None):
         if now is not None:
             print("({} Emptying {}".format(now, name))
-        self.value = max(self.value - self.step, 0)
+
+        self.value = max(self.value - self.speed[self.speed_index], 0)
+
+        if self.value == 0:
+            self.speed_index = (self.speed_index + 1) % len(self.speed)
 
 
 class MediumProcess(ComponentProcess):
@@ -39,39 +52,39 @@ class MediumProcess(ComponentProcess):
 
 
         # approvisionning
-        self.approvisioning1 = Container(0, MediumProcess.SLOW, limit=500)
-        self.approvisioning2 = Container(0, MediumProcess.SLOW, limit=500)
+        self.approvisioning1 = Container(0, [5, 2], limit=500)
+        self.approvisioning2 = Container(0, [5, 2], limit=500)
 
         # first tank
         self.valve1 = False
         self.valve2 = False
         self.motor1 = False
         self.motor2 = False
-        self.tank1 = Container(0, MediumProcess.SLOW, limit=60)
+        self.tank1 = Container(0, [2, 10, 5], limit=60)
         self.valveTank1 = False
 
         # first silo
-        self.silo1 = Container(0, MediumProcess.FAST, limit=60)
+        self.silo1 = Container(0, [4, 5], limit=60)
         self.valveSilo1 = False
 
         # second silo
-        self.silo2 = Container(0, MediumProcess.FAST, limit=80)
+        self.silo2 = Container(0, [5, 10], limit=80)
         self.motor2 = False
         self.valveSilo2 = False
 
         # second tank (charcoal)
-        self.tankCharcoal = Container(0, MediumProcess.FAST, limit=500)
+        self.tankCharcoal = Container(0, [5, 2], limit=500)
         self.valveTankCharcoal = False
 
         # wagon
         self.wagonEnd = False
-        self.wagonCar = Container(0, MediumProcess.SLOW, limit=40)
+        self.wagonCar = Container(0, [2, 5], limit=40)
         self.wagonStart = True
         self.wagonlidOpen = False
         self.wagonMoving = False
 
         # final tank
-        self.tankFinal = Container(0, MediumProcess.SLOW, limit=80)
+        self.tankFinal = Container(0, [10, 5], limit=80)
         self.valveTankFinal = False
 
         self.valve_sync = {x : -1 for x in varmap.keys() if x.startswith("valve")}

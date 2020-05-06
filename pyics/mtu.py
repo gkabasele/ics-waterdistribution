@@ -105,7 +105,7 @@ class MTU(object):
             var = self.variables[name]
             res = None
             type_ = var.get_type()
-            if type_ == CO :
+            if type_ == CO:
                 res = self.plcs[name].read_coils(var.get_addr(),var.get_size()).bits[0]  
             elif type_ == HR:
                 res = self.plcs[name].read_holding_registers(var.get_addr(), var.get_size()).registers[0]

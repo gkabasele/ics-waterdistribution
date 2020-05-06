@@ -103,7 +103,7 @@ class MTUMedSystem(MTU):
             if self.varmap[M2]:
                 self.change_coil(M2, False)
 
-        elif self.varmap[S2] == 20:
+        elif self.varmap[S2] == 20 and not self.emptying_s2:
             if self.varmap[S1] == 40:
                 self.change_coil(VS1, True)
                 self.emptying_s1 = True
@@ -147,6 +147,10 @@ class MTUMedSystem(MTU):
 
         elif self.varmap[T1] < 40 and self.emptying_t1 and not self.varmap[VT1]:
             self.change_coil(VT1, True)
+            if self.varmap[V1]:
+                self.change_coil(V1, False)
+            if self.varmap[V2]:
+                self.change_coil(V2, False)
 
         elif self.varmap[T1] == 40:
             if self.varmap[V1]:

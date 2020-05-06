@@ -193,6 +193,7 @@ class PLC(ModbusTcpServer, object):
 
         '''
         f = open(filename+'/'+self.name+'.ex', 'w')
+        logger.info("Exporting variable to {}".format(filename + "/" + self.name + ".ex"))
         for k, v in self.variables.iteritems():
             f.write("%s,%s:%s:%s,%s,%s\n" % (self.ip, self.port, k, v.get_type(), v.get_addr(), v.get_size()))
         f.close()
