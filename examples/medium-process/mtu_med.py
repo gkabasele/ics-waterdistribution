@@ -45,22 +45,21 @@ class MTUMedSystem(MTU):
         self.emptying_s1 = False
         self.emptying_wg = False
         self.emptying_tf = False
-
         super(MTUMedSystem, self).__init__(ip, port, client)
 
     def write_to_logfile(self):
         msg = str(self.varmap)
-        msg.replace("False", 1).replace("True", 2)
+        msg.replace("False", "1").replace("True", "2")
         logger.info(msg)
 
     def main_loop(self, *args, **kargs):
-
 
         for k, v in self.varmap.iteritems():
             self.varmap[k] = self.get_variable(k)
 
         if any(x is None for x in self.varmap.itervalues()):
-           return
+            return
+
         self.write_to_logfile()
         msg = "[{}] {}, e1:{}, es1:{}, ew:{}, es2:{}, rm1:{}, rm2:{}, ef:{}\n\n".format(datetime.now(),
                                                                                         self.varmap,
