@@ -107,10 +107,9 @@ class MTUMedSystem(MTU):
             if self.varmap[S1] == 40:
                 self.change_coil(VS1, True)
                 self.emptying_s1 = True
-                self.emptying_wg = False
 
         # case where the emptying was interrupted
-        elif self.varmap[S2] < 60 and self.emptying_s2 and not self.varmap[VS2]:
+        elif self.varmap[S2] <= 60 and self.emptying_s2 and not self.varmap[VS2]:
             self.change_coil(VS2, True)
 
         elif self.varmap[S2] == 60:
@@ -195,6 +194,7 @@ class MTUMedSystem(MTU):
 
             elif self.varmap[WC] == 0 and not self.varmap[WS]:
                 self.change_coil(WO, False)
+                self.emptying_wg = False
                 self.change_coil(WM, True)
 
     def change_coil(self, name, val):

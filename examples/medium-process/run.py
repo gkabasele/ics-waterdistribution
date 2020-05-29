@@ -19,6 +19,9 @@ parser.add_argument("--create", dest="create_dir", action="store_true", help="Cr
 parser.add_argument("--nb", dest="nb_round", type=int, default=5, action="store", help="Number of iteration for the process execution") 
 
 parser.add_argument("--export_process", dest="export_process", action="store", help="File to see state of process variable over time")
+
+parser.add_argument("--do_attack", action="store_true", default=False, dest="do_attack", help="perform the slow down attack on physical process")
+parser.add_argument("--export_attack", action="store", dest="atk_time", help="perform the slow down attack on physical process")
 args = parser.parse_args()
 
 if os.path.exists(PLCS_LOG):
@@ -43,7 +46,8 @@ os.mkdir(PLCS_LOG)
 plc_generator.create_plc_scripts()
 
 cre = "--create" if args.create_dir else ""
-t = threading.Thread(name='process', target=store_watcher.start, args=(STORE, args.nb_round))
+t = threading.Thread(name='process', target=store_watcher.start, args=(STORE, args.nb_round, 
+                                                                       args.do_attack, args.atk_time))
 t.start()
 
 processes = {}

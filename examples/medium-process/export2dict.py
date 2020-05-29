@@ -29,6 +29,12 @@ def main(inname, outname):
                     d = res[DICT]
                     state = literal_eval(d)
                     state['timestamp'] = ts
+                    for k, v in state.items():
+                        if type(v) is bool:
+                            if v:
+                                state[k] = 2.0
+                            else:
+                                state[k] = 1.0
                     states.append(state)
 
 

@@ -62,10 +62,14 @@ class VarProcessHandler(FileSystemEventHandler):
                     self.process.release_tank(VTF, TF)
             self.process.lock.release()
 
-def start(store, nb_round):
+def start(store, nb_round, do_attack, atk_time):
     env = simpy.rt.RealtimeEnvironment(factor=1)
     lock = threading.Lock()
-    process = MediumProcess(env, store, "Medium Process",lock)
+    fname = None
+    if atk_time is not None:
+        fname = open(atk_time, "w")
+
+    process = MediumProcess(env, store, "Medium Process", lock, do_attack, fname)
     t = threading.Thread(name='medium', target=env.run, kwargs={'until':nb_round})
     t.start()
     handler = VarProcessHandler(process)
@@ -77,3 +81,7 @@ def start(store, nb_round):
     time.sleep(nb_round+10)
     print "Stopping observer"
     observer.stop()
+
+    if fname is not None:
+        fname.close()
+
