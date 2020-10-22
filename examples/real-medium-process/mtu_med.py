@@ -55,6 +55,8 @@ class MTUMedSystem(MTU):
         self.m1_running_waiting = 0
         self.m1a_running_waiting = 0
 
+        self.motor_waiting = 10
+
         self.m2_running_waiting = 0
         self.m2a_running_waiting = 0
 
@@ -187,7 +189,7 @@ class MTUMedSystem(MTU):
                 self.change_coil(V2, False)
 
             if self.varmap[M1] and self.varmap[M1a]:
-                if (self.m1_running_waiting + self.m1a_running_waiting) >= 10:
+                if (self.m1_running_waiting + self.m1a_running_waiting) >= 2 * self.motor_waiting:
                     self.change_coil(M1, False)
                     self.change_coil(M1a, False)
 
@@ -201,7 +203,7 @@ class MTUMedSystem(MTU):
             elif self.varmap[M1] and not self.varmap[M1a]:
 
                 self.m1_running_waiting += 1
-                if self.m1_running_waiting == 5:
+                if self.m1_running_waiting == self.motor_waiting:
                     self.change_coil(M1a, True)
                     self.running_m1a = True
 

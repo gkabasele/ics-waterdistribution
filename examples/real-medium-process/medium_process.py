@@ -10,6 +10,9 @@ from pyics.component_process import ComponentProcess
 from pyics.utils import *
 from constants import *
 
+MAX_SPEED = 40
+MIN_SPEED = 20
+
 
 class Motor():
 
@@ -202,19 +205,19 @@ class MediumProcess(ComponentProcess):
     def valves_effect(self):
         attack = False
 
-        if self.do_attack:
+        #if self.do_attack:
 
-            if self.curr_atk_time < len(self.attack_time):
-                attack = (self.cur_step == self.attack_time[self.curr_atk_time])
+        #    if self.curr_atk_time < len(self.attack_time):
+        #        attack = (self.cur_step == self.attack_time[self.curr_atk_time])
 
-            if attack:
-                self.curr_atk_time += 1
-                self.atk_filename.write(str(datetime.now()) + ": 1\n")
-                self.running_atk = True
-            else:
-                if self.running_atk:
-                    self.cur_type = (self.cur_type + 1) % len(self.atk_types)
-                    self.running_atk = False
+        #    if attack:
+        #        self.curr_atk_time += 1
+        #        #self.atk_filename.write(str(datetime.now()) + ": 1\n")
+        #        self.running_atk = True
+        #    else:
+        #        if self.running_atk:
+        #            self.cur_type = (self.cur_type + 1) % len(self.atk_types)
+        #            self.running_atk = False
 
         if self.get(V1, "b"):
             self.pass_fluid(V1, A1, T1)
@@ -284,14 +287,16 @@ class MediumProcess(ComponentProcess):
 
         elif self.get(M1, "b") and not self.get(M1a, "b"):
             if self.motorSpeed1.value == 0 and not self.do_attack:
-                self.motorSpeed1.value = 10
+                self.motorSpeed1.value = MIN_SPEED
             elif self.do_attack:
+                if self.atk_filename is not None:
+                    self.atk_filename.write(str(datetime.now()) + ": 1\n")
                 self.motorSpeed1.value += 2
             print("({}) running motor M1 at {}".format(self.env.now, self.motorSpeed1.value))
 
         elif self.get(M1, "b")and self.get(M1a, "b"):
-            if self.motorSpeed1.value == 10:
-                self.motorSpeed1.value = 20
+            if self.motorSpeed1.value == MIN_SPEED:
+                self.motorSpeed1.value = MAX_SPEED
             print("({}) running motor M1 at {}".format(self.env.now, self.motorSpeed1.value))
 
 
