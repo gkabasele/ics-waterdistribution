@@ -63,8 +63,8 @@ class Container():
 
 class MediumProcess(ComponentProcess):
 
-    def __init__(self, env, store, name, lock, do_attack, 
-                 atk_filename, *args, **kwargs):
+    def __init__(self, env, store, name, lock, do_attack_motor, 
+                 do_attack_valve, atk_filename, *args, **kwargs):
 
         super(MediumProcess, self).__init__(env, store, name, lock, *args, **kwargs)
 
@@ -141,7 +141,8 @@ class MediumProcess(ComponentProcess):
         self.set(TF, self.tankFinal.value)
         self.set(VTF, self.valveTankFinal)
 
-        self.do_attack = do_attack
+        self.do_attack_motor = do_attack_motor
+        self.do_attack_valve = do_attack_valve
 
         # Number steps
         self.cur_step = 0
@@ -166,12 +167,20 @@ class MediumProcess(ComponentProcess):
 
         self.atk_filename = atk_filename
 
+        # number of normal trans between mal transition
+        #self.motor_norm_trans = random.randint(2, 5)
+        self.motor_norm_trans = 2
+        self.mal_trans_run = False
+
+    def print_info(self, msg):
+        print "(%d) %s " % (self.env.now, msg)
+
     def computation(self, *args, **kwargs):
 
-        print "(%d) Starting physiscal process tank" % (self.env.now)
+        self.print_info("Starting physiscal process tank")
 
         while True:
-            print "(%d) Approvisionning A1 and A2, tankCharcoal" % (self.env.now)
+            self.print_info("Approvisionning A1 and A2, tankCharcoal")
             yield self.env.timeout(quick_dur)
             self.approvisioning1.value = min(self.approvisioning1.value + 2*amount_fluid_passing,
                                              self.approvisioning1.limit)
@@ -186,7 +195,7 @@ class MediumProcess(ComponentProcess):
             self.set(A2, self.approvisioning2.value)
             self.set(TC, self.tankCharcoal.value)
             self.lock.acquire()
-            time.sleep(0.1)
+            time.sleep(0.05)
             self.valves_effect()
             self.running_motor()
             self.lock.release()
@@ -205,19 +214,19 @@ class MediumProcess(ComponentProcess):
     def valves_effect(self):
         attack = False
 
-        #if self.do_attack:
+        if self.do_attack_valve:
 
-        #    if self.curr_atk_time < len(self.attack_time):
-        #        attack = (self.cur_step == self.attack_time[self.curr_atk_time])
+            if self.curr_atk_time < len(self.attack_time):
+                attack = (self.cur_step == self.attack_time[self.curr_atk_time])
 
-        #    if attack:
-        #        self.curr_atk_time += 1
-        #        #self.atk_filename.write(str(datetime.now()) + ": 1\n")
-        #        self.running_atk = True
-        #    else:
-        #        if self.running_atk:
-        #            self.cur_type = (self.cur_type + 1) % len(self.atk_types)
-        #            self.running_atk = False
+            if attack:
+                self.curr_atk_time += 1
+                self.atk_filename.write(str(datetime.now()) + ": 1\n")
+                self.running_atk = True
+            else:
+                if self.running_atk:
+                    self.cur_type = (self.cur_type + 1) % len(self.atk_types)
+                    self.running_atk = False
 
         if self.get(V1, "b"):
             self.pass_fluid(V1, A1, T1)
@@ -265,7 +274,7 @@ class MediumProcess(ComponentProcess):
             self.release_tank(VTF, TF)
 
     def move_wagon(self):
-        print "(%d) moving the wagon" % (self.env.now)
+        self.print_info("moving the wagon")
         if self.wagonEnd:
             self.wagonEnd = False
             self.wagonStart = True
@@ -286,18 +295,34 @@ class MediumProcess(ComponentProcess):
             self.motorSpeed1.value = 0
 
         elif self.get(M1, "b") and not self.get(M1a, "b"):
-            if self.motorSpeed1.value == 0 and not self.do_attack:
+            if self.motorSpeed1.value == 0 and not self.do_attack_motor:
                 self.motorSpeed1.value = MIN_SPEED
-            elif self.do_attack:
-                if self.atk_filename is not None:
-                    self.atk_filename.write(str(datetime.now()) + ": 1\n")
-                self.motorSpeed1.value += 2
-            print("({}) running motor M1 at {}".format(self.env.now, self.motorSpeed1.value))
+
+            elif self.motorSpeed1.value == MIN_SPEED:
+                pass
+
+            elif self.do_attack_motor:
+                self.print_info("Normal transition motor1: %d" % self.motor_norm_trans)
+                if self.motor_norm_trans != 0:
+                    self.motorSpeed1.value = MIN_SPEED
+                    self.motor_norm_trans -= 1
+                else:
+                    if self.atk_filename is not None:
+                        self.atk_filename.write(str(datetime.now()) + ": 1\n")
+                    self.mal_trans_run = True
+                    self.motorSpeed1.value += 2
+
+            self.print_info("running motor M1 at {}".format(self.motorSpeed1.value))
 
         elif self.get(M1, "b")and self.get(M1a, "b"):
             if self.motorSpeed1.value == MIN_SPEED:
                 self.motorSpeed1.value = MAX_SPEED
-            print("({}) running motor M1 at {}".format(self.env.now, self.motorSpeed1.value))
+                #self.motor_norm_trans = random.randint(2, 5)
+                if self.motor_norm_trans == 0 and self.mal_trans_run:
+                    self.motor_norm_trans = 2
+                    self.mal_trans_run = False
+
+            self.print_info("running motor M1 at {}".format(self.motorSpeed1.value))
 
 
         self.set(MS1, self.motorSpeed1.value)
@@ -305,15 +330,15 @@ class MediumProcess(ComponentProcess):
         if not self.get(M2, "b"):
             self.motorSpeed2.value = 0
 
-        elif self.get(M2, "b")and not self.get(M2, "b"):
+        elif self.get(M2, "b")and not self.get(M2a, "b"):
             if self.motorSpeed2.value == 0:
                 self.motorSpeed2.value = 10
-            print("({}) running motor M2 at {}".format(self.env.now, self.motorSpeed2.value))
+            self.print_info("running motor M2 at {}".format(self.motorSpeed2.value))
 
-        elif self.get(M2, "b") and self.get(M2, "b"):
+        elif self.get(M2, "b") and self.get(M2a, "b"):
             if self.motorSpeed2.value == 10:
                 self.motorSpeed2.value = 20
-            print("({}) running motor M2 at {}".format(self.env.now, self.motorSpeed2.value))
+            self.print_info("running motor M2 at {}".format(self.motorSpeed2.value))
 
         self.set(MS2, self.motorSpeed2.value)
 
@@ -324,9 +349,8 @@ class MediumProcess(ComponentProcess):
         else:
             tank = getattr(self, tank_name)
             self.valve_sync[valve] = self.env.now
-            print "(%d) tank %s is open, releasing %d of tank final" % (self.env.now,
-                                                                        tank_name,
-                                                                        tank.value)
+            self.print_info("tank %s is open, releasing %d of tank final" % (tank_name,
+                                                                             tank.value))
             tank.empty()
             self.set(tank_name, tank.value)
 
@@ -335,9 +359,10 @@ class MediumProcess(ComponentProcess):
             return
         else:
             self.valve_sync[valve] = self.env.now
-            print "(%d) %s is open, passing fluid to %s" % (self.env.now, attr_from, attr_to)
             tmp_from = getattr(self, attr_from)
             tmp_to = getattr(self, attr_to)
+            self.print_info("%s is open, passing fluid to %s %s->%s" % (attr_from, attr_to,
+                                                                        tmp_from.value, tmp_to.value))
             tmp_from.transfer(tmp_to)
             self.set(attr_from, getattr(self, attr_from).value)
             self.set(attr_to, getattr(self, attr_to).value)
