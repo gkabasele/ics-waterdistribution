@@ -148,27 +148,26 @@ class MediumProcess(ComponentProcess):
         self.cur_step = 0
 
         # Start step for the attack
-        self.start_step = 600
+        self.start_step = 120
 
         # Frame size of the attack
         self.frame_size = 60
 
         # Waiting size
-        self.wait_size = 300
+        self.wait_size = 120
 
         #attack time
         self.attack_time = self.gen_attack_time()
         self.curr_atk_time = 0
 
         #attack type
-        self.atk_types = [VT1, VS2, WO]
+        self.atk_types = [V2, VT1]
         self.cur_type = 0
         self.running_atk = False
 
         self.atk_filename = atk_filename
 
         # number of normal trans between mal transition
-        #self.motor_norm_trans = random.randint(2, 5)
         self.motor_norm_trans = 2
         self.mal_trans_run = False
 
@@ -195,7 +194,10 @@ class MediumProcess(ComponentProcess):
             self.set(A2, self.approvisioning2.value)
             self.set(TC, self.tankCharcoal.value)
             self.lock.acquire()
-            time.sleep(0.05)
+            if self.do_attack_motor or self.do_attack_valve:
+                time.sleep(0.3)
+            else:
+                time.sleep(0.05)
             self.valves_effect()
             self.running_motor()
             self.lock.release()
@@ -221,7 +223,7 @@ class MediumProcess(ComponentProcess):
 
             if attack:
                 self.curr_atk_time += 1
-                self.atk_filename.write(str(datetime.now()) + ": 1\n")
+                self.atk_filename.write(str(datetime.now()) + ": {}\n".format(self.atk_types[self.cur_type]))
                 self.running_atk = True
             else:
                 if self.running_atk:
@@ -229,15 +231,29 @@ class MediumProcess(ComponentProcess):
                     self.running_atk = False
 
         if self.get(V1, "b"):
-            self.pass_fluid(V1, A1, T1)
+            if attack and self.atk_types[self.cur_type] == V1:
+                self.valve1 = False
+                self.set(V1, self.valve1)
+            else:
+                self.pass_fluid(V1, A1, T1)
 
         if self.get(V2, "b"):
-            self.pass_fluid(V2, A2, T1)
+            if attack and self.atk_types[self.cur_type] == V2:
+                self.valve2 = False
+                self.set(V2, self.valve2)
+
+            else:
+                self.pass_fluid(V2, A2, T1)
 
         if self.get(VT1, "b"):
             if attack and self.atk_types[self.cur_type] == VT1:
                 self.valveTank1 = False
                 self.set(VT1, self.valveTank1)
+                if self.motorSpeed1.value == MAX_SPEED:
+                    self.motor1 = True
+                    self.set(M1, self.motor1)
+                    self.motor1a = True
+                    self.set(M1a, self.motor1)
 
             else:
                 self.pass_fluid(VT1, T1, S1)
@@ -308,7 +324,7 @@ class MediumProcess(ComponentProcess):
                     self.motor_norm_trans -= 1
                 else:
                     if self.atk_filename is not None:
-                        self.atk_filename.write(str(datetime.now()) + ": 1\n")
+                        self.atk_filename.write(str(datetime.now()) + ": {}\n".format(MS1))
                     self.mal_trans_run = True
                     self.motorSpeed1.value += 2
 
@@ -375,5 +391,5 @@ class MediumProcess(ComponentProcess):
 
 def start(store, nb_round):
     env = simpy.rt.RealtimeEnvironment(factor=1)
-    phys_proc = (MediumProcess(env, store, "Medium Process", nb_round))
+    #phys_proc = (MediumProcess(env, store, "Medium Process", nb_round))
     env.run(until=nb_round)
